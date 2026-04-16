@@ -15,12 +15,14 @@ e_debug_mode_optimized = 2
 def main():
 	start_time()
 
+	open("compiler_output.txt", "w").close()
+
 	if len(sys.argv) != len(set(sys.argv)):
 		error("Duplicate arguments")
 
 	os.makedirs("build", exist_ok=True)
 	run_no_wait("generate_ctags.bat", output=False)
-	run_and_wait("build/metaprogram", False)
+	run_and_wait("build/metaprogram.exe -Dm_debug", False)
 
 	is_game_running = is_running("main.exe")
 
@@ -80,6 +82,7 @@ def compile(src_files, output_name, pdb_name, compiler_args, linker_args):
 	os.system("type build\\temp_compiler_output.txt")
 	# print(cmd)
 	success = True if result == 0 else False
+	shutil.copyfile("build/temp_compiler_output.txt", "compiler_output.txt")
 	return success
 #------------------------------------------------------------------------------------------------------------------------------------
 

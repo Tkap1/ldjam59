@@ -64,44 +64,15 @@ func s_entity* get_entity(s_entity_ref ref);
 func float get_wanted_game_speed(float interp_dt);
 func s_active_sound* find_playing_sound(e_sound id);
 func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
-func float get_player_speed();
 func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv);
 func s_rect get_chunk_rect(s_v2i index);
-func b8 is_chunk_unlocked(int x, int y);
-func b8 is_chunk_unlocked_v2i(s_v2i index);
-func b8 are_any_adjacent_chunks_unlocked(s_v2i index);
-func void unlock_chunk_v2i(s_v2i index);
-func int get_chunk_unlock_cost(s_v2i index);
 func s_v2 get_chunk_center(s_v2i index);
-func b8 can_afford(int currency, int cost);
-func void add_currency(int currency);
-func void add_raw_currency(int currency);
 func s_rect get_camera_bounds(s_m4 view_inv);
 func s_v2i chunk_index_from_pos(s_v2 pos);
 func s_v2i tile_index_from_pos(s_v2 pos);
-func void place_machine(s_v2i tile_index, e_machine machine);
-func e_place_result can_we_place_machine(s_v2 player_pos, s_v2i chunk_index, s_v2i tile_index, e_machine machine, int currency);
-func s_v2i chunk_index_from_tile_index(s_v2i tile_index);
-func b8 is_machine_unlocked(e_machine machine);
-func b8 is_resource_tile(e_tile tile);
-func int get_machine_cost(e_machine machine);
-func void remove_machine(s_v2i tile_index);
-func void sell_machine(s_v2i tile_index, e_machine machine);
-func s_len_str get_research_tooltip(e_research research);
-func s_len_str get_machine_tooltip(e_machine machine);
 template <int n>
 func void builder_add_separator(s_str_builder<n>* builder);
-func void draw_selector_center(s_v2 pos, s_v2 size, float brightness, int render_pass_index);
-func int get_tile_distance_from_player_to_machine(s_v2 player_pos, s_v2i machine_tile_index, e_machine machine);
-func int get_player_tile_reach();
 func void add_non_spammy_message(s_v2 pos, s_len_str text);
-func s_len_str str_from_place_result(e_place_result place_result);
-func s_stats get_stats();
-func b8 are_research_requirements_satisfied(e_research research);
-func void draw_undiscovered_slot(s_v2 pos, s_v2 rect_size, float flash);
-func void draw_game_name();
-func void draw_menu_background(s_m4 ortho, s_m4 view_inv);
-func void draw_ground(s_m4 ortho, s_m4 view_inv);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif

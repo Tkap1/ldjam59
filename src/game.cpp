@@ -126,13 +126,6 @@ m_dll_export void init(s_platform_data* platform_data)
 
 	set_state(&game->state0, e_game_state0_main_menu);
 	game->do_hard_reset = true;
-	set_state(&game->hard_data.state1, e_game_state1_default);
-
-	{
-		game->superku.texture = e_texture_superku;
-		game->superku.texture_size = v2i(4096, 4502);
-		game->superku.sprite_size = v2i(512, 500);
-	}
 
 	#if defined(m_winhttp)
 	// @TODO(tkap, 08/08/2025): This might break with hot reloading
@@ -261,7 +254,6 @@ func void input()
 	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		input end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
-	e_game_state1 state1 = (e_game_state1)get_state(&hard_data->state1);
 
 	SDL_Event event;
 	while(SDL_PollEvent(&event) != 0) {
@@ -302,7 +294,7 @@ func void input()
 						if(event.key.keysym.mod & KMOD_LCTRL) {
 							game->do_hard_reset = true;
 						}
-						else if(state1 == e_game_state1_defeat) {
+						else {
 							game->do_hard_reset = true;
 						}
 					}
@@ -313,27 +305,13 @@ func void input()
 					else if(scancode == SDL_SCANCODE_S && event.key.repeat == 0) {
 					}
 					else if(scancode == SDL_SCANCODE_E && event.key.repeat == 0) {
-						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
-							toggle_maybe(&soft_data->open_inventory_timestamp, game->render_time);
-							if(soft_data->open_inventory_timestamp.valid) {
-								set_maybe_if_invalid(&game->tutorial.opened_inventory, game->render_time);
-							}
-						}
 					}
 					else if(scancode == SDL_SCANCODE_Q && event.key.repeat == 0) {
 						soft_data->press_input.q = true;
 					}
 					else if((key == SDLK_ESCAPE && event.key.repeat == 0) || (key == SDLK_o && event.key.repeat == 0) || (key == SDLK_p && event.key.repeat == 0)) {
-						if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
-							if(soft_data->machine_to_place.valid) {
-								soft_data->machine_to_place = zero;
-							}
-							else if(soft_data->open_inventory_timestamp.valid) {
-								soft_data->open_inventory_timestamp = zero;
-							}
-							else {
-								add_state(&game->state0, e_game_state0_pause);
-							}
+						if(state0 == e_game_state0_play) {
+							add_state(&game->state0, e_game_state0_pause);
 						}
 						else if(state0 == e_game_state0_pause) {
 							pop_state_transition(&game->state0, game->render_time, c_transition_time);
@@ -404,10 +382,9 @@ func void input()
 
 			case SDL_MOUSEWHEEL: {
 				float x = range_lerp((float)event.wheel.y, -1, 1, 0.9f, 1.1f);
-				if(state0 == e_game_state0_play && state1 == e_game_state1_default) {
+				if(state0 == e_game_state0_play) {
 					soft_data->wanted_zoom *= x;
 					soft_data->wanted_zoom = clamp(soft_data->wanted_zoom, 0.125f, 4.0f);
-					set_maybe_if_invalid(&game->tutorial.zoomed, game->render_time);
 				}
 			} break;
 		}
@@ -431,7 +408,6 @@ func void update()
 		memset(hard_data, 0, sizeof(*hard_data));
 		memset(soft_data, 0, sizeof(*soft_data));
 		game->update_time = 0;
-		set_state(&game->hard_data.state1, e_game_state1_default);
 		reset_linear_arena(&game->arena);
 		for_enum(type_i, e_entity) {
 			entity_manager_reset(entity_arr, type_i);
@@ -439,71 +415,6 @@ func void update()
 		soft_data->zoom = 1;
 		soft_data->wanted_zoom = 1;
 
-		soft_data->currency = 60;
-
-		{
-			s_v2 pos = v2(
-				c_starting_chunk * c_chunk_size * c_tile_size + c_chunk_size * 0.5f * c_tile_size
-			);
-			unlock_chunk_v2i(v2i(c_starting_chunk, c_starting_chunk));
-			s_entity player = zero;
-			teleport_entity(&player, pos);
-			entity_manager_add(entity_arr, e_entity_player, player);
-		}
-
-		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		spawn resources start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		{
-			for(int chunk_y = 0; chunk_y < c_chunk_count; chunk_y += 1) {
-				for(int chunk_x = 0; chunk_x < c_chunk_count; chunk_x += 1) {
-					int resource_count = rand_range_ii(&game->rng, 1, 4);
-					if(v2i(chunk_x, chunk_y) == v2i(c_starting_chunk, c_starting_chunk)) {
-						resource_count = 4;
-					}
-					for(int i = 0; i < resource_count; i += 1) {
-						s_list<e_tile, e_tile_count> possible_resource_arr = zero;
-						possible_resource_arr.add(e_tile_resource_1);
-						int distance = abs(chunk_x - c_starting_chunk) + abs(chunk_y - c_starting_chunk);
-						if(distance >= 2) {
-							possible_resource_arr.add(e_tile_resource_2);
-						}
-						if(distance >= 5) {
-							possible_resource_arr.add(e_tile_resource_3);
-						}
-						int rand_index = rand_range_ie(&game->rng, 0, possible_resource_arr.count);
-						e_tile chosen_resource = possible_resource_arr[rand_index];
-						int resource_size = rand_range_ii(&game->rng, 10, 60);
-						int min_x = chunk_x * c_chunk_size;
-						int max_x = min_x + c_chunk_size;
-						int min_y = chunk_y * c_chunk_size;
-						int max_y = min_y + c_chunk_size;
-						int placed = 0;
-						s_v2i pos = v2i(
-							rand_range_ie(&game->rng, min_x, max_x),
-							rand_range_ie(&game->rng, min_y, max_y)
-						);
-						while(placed < resource_size) {
-							if(!is_2d_index_out_of_bounds(pos, v2i(c_max_tiles, c_max_tiles))) {
-								s_v2i chunk_index = chunk_index_from_tile_index(pos);
-								if(soft_data->natural_terrain_arr[pos.y][pos.x] == e_tile_none && chunk_index == v2i(chunk_x, chunk_y)) {
-									soft_data->natural_terrain_arr[pos.y][pos.x] = chosen_resource;
-									placed += 1;
-								}
-							}
-							if(rand_bool(&game->rng)) {
-								pos.x += rand_bool(&game->rng) ? 1 : -1;
-								pos.x = clamp(pos.x, min_x, max_x);
-							}
-							else {
-								pos.y += rand_bool(&game->rng) ? 1 : -1;
-								pos.y = clamp(pos.y, min_y, max_y);
-							}
-
-						}
-					}
-				}
-			}
-		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		spawn resources end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		game->music_speed.target = 1;
 	}
@@ -513,14 +424,7 @@ func void update()
 	b8 should_do_game = false;
 	switch(state0) {
 		case e_game_state0_play: {
-			e_game_state1 state1 = (e_game_state1)get_state(&hard_data->state1);
-			switch(state1) {
-				xcase e_game_state1_default: {
-					should_do_game = true;
-				}
-				xcase e_game_state1_defeat: {
-				}
-			}
+			should_do_game = true;
 		} break;
 
 		default: {}
@@ -541,139 +445,9 @@ func void update()
 		game->update_time += (float)c_update_delay;
 		hard_data->update_count += 1;
 		soft_data->update_count += 1;
-
-		s_stats stats = get_stats();
-		soft_data->collector_timer += delta * (1.0f + stats.arr[e_stat_collector_speed] / 100.0f);
-		while(soft_data->collector_timer >= 1.33f) {
-			soft_data->collector_timer -= 1.33f;
-
-			{
-				int to_add = soft_data->machine_count_arr[e_machine_collector_1];
-				to_add += soft_data->machine_count_arr[e_machine_collector_2] * 5;
-				to_add += soft_data->machine_count_arr[e_machine_collector_3] * 5 * 5;
-				add_raw_currency(to_add);
-			}
-		}
-
-		soft_data->pure_collector_timer += delta * (1.0f + stats.arr[e_stat_collector_speed] / 100.0f);
-		while(soft_data->pure_collector_timer >= 1.33f * 5) {
-			soft_data->pure_collector_timer -= 1.33f * 5;
-
-			int to_add = soft_data->machine_count_arr[e_machine_pure_collector_1];
-			to_add += soft_data->machine_count_arr[e_machine_pure_collector_2] * 5;
-			to_add += soft_data->machine_count_arr[e_machine_pure_collector_3] * 5 * 5;
-			add_currency(to_add);
-		}
-
-		soft_data->processor_timer += delta * (1.0f + stats.arr[e_stat_processor_speed] / 100.0f);
-		while(soft_data->processor_timer >= 1.33f) {
-			soft_data->processor_timer -= 1.33f;
-
-			{
-				int could_process = soft_data->machine_count_arr[e_machine_processor_1] * 2;
-				could_process += soft_data->machine_count_arr[e_machine_processor_2] * 2 * 5;
-				could_process += soft_data->machine_count_arr[e_machine_processor_3] * 2 * 5 * 5;
-				int will_process = min(could_process, soft_data->raw_currency);
-				add_raw_currency(-will_process);
-				add_currency(will_process);
-			}
-		}
-
-		if(soft_data->current_research.valid) {
-			soft_data->research_timer += delta * (1.0f + stats.arr[e_stat_research_speed] / 100.0f);
-
-			while(soft_data->research_timer >= 0.45f) {
-				soft_data->research_timer -= 0.45f;
-
-				int could_process = soft_data->machine_count_arr[e_machine_research_1];
-				could_process += soft_data->machine_count_arr[e_machine_research_2] * 5;
-				could_process += soft_data->machine_count_arr[e_machine_research_3] * 5 * 5;
-				int will_process = min(could_process, (int)soft_data->currency);
-				if(game->free_research) {
-					will_process = 10000000;
-				}
-				int research_left = g_research_data[soft_data->current_research.value].cost - soft_data->spent_on_research_arr[soft_data->current_research.value];
-				will_process = min(will_process, research_left);
-				if(!game->free_research) {
-					add_currency(-will_process);
-				}
-				soft_data->spent_on_research_arr[soft_data->current_research.value] += will_process;
-				if(will_process >= research_left) {
-					soft_data->research_completed_timestamp_arr[soft_data->current_research.value] = maybe(game->update_time);
-					if(soft_data->current_research.value == e_research_win) {
-						play_sound(e_sound_win, zero);
-					}
-					else {
-						play_sound(e_sound_upgrade, zero);
-					}
-					soft_data->current_research = zero;
-				}
-			}
-		}
-
-		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		{
-			s_entity* player = &entity_arr->data[c_first_index[e_entity_player]];
-			player->walking = false;
-			s_v2 movement = zero;
-			if(soft_data->hold_input.left) {
-				movement.x -= 1;
-			}
-			if(soft_data->hold_input.right) {
-				movement.x += 1;
-			}
-			if(soft_data->hold_input.up) {
-				movement.y -= 1;
-			}
-			if(soft_data->hold_input.down) {
-				movement.y += 1;
-			}
-			if(v2_length(movement) > 0) {
-				set_maybe_if_invalid(&game->tutorial.moved, game->render_time);
-				player->last_dir = movement;
-				player->walking = true;
-
-				float passed = game->render_time - soft_data->last_step_sound_timestamp;
-				float p = get_player_speed() / c_base_player_speed;
-				if(passed >= 0.25f / p) {
-					soft_data->last_step_sound_timestamp = game->render_time;
-					if(!game->disable_walk_sound) {
-						play_sound(e_sound_step, {.speed = get_rand_sound_speed(1.2f, &game->rng)});
-					}
-				}
-			}
-			movement = v2_normalized(movement) * get_player_speed() * delta;
-
-			s_v2 temp_movement = movement;
-			while(fabsf(temp_movement.x) > 0) {
-				float to_move = at_most(1.0f, fabsf(temp_movement.x));
-				float s = sign_as_float(temp_movement.x);
-				player->pos.x += to_move * s;
-				temp_movement.x -= to_move * s;
-				s_v2i chunk_index = chunk_index_from_pos(player->pos);
-				if(!is_chunk_unlocked_v2i(chunk_index)) {
-					player->pos.x -= to_move * s;
-					break;
-				}
-			}
-			while(fabsf(temp_movement.y) > 0) {
-				float to_move = at_most(1.0f, fabsf(temp_movement.y));
-				float s = sign_as_float(temp_movement.y);
-				player->pos.y += to_move * s;
-				temp_movement.y -= to_move * s;
-				s_v2i chunk_index = chunk_index_from_pos(player->pos);
-				if(!is_chunk_unlocked_v2i(chunk_index)) {
-					player->pos.y -= to_move * s;
-					break;
-				}
-			}
-		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	}
 
-	s_maybe<float>* temp = &soft_data->research_completed_timestamp_arr[e_research_win];
-	if(temp->valid && game->update_time - temp->value >= 3.0f) {
-		*temp = zero;
+	if(false) {
 		if(game->leaderboard_nice_name.count <= 0 && c_on_web) {
 			add_temporary_state_transition(&game->state0, e_game_state0_input_name, game->render_time, c_transition_time);
 		}
@@ -689,7 +463,6 @@ func void update()
 			#endif
 		}
 	}
-	memset(&soft_data->frame_data, 0, sizeof(soft_data->frame_data));
 }
 
 func void render(float interp_dt, float delta)
@@ -739,7 +512,6 @@ func void render(float interp_dt, float delta)
 		game->speed = 0;
 		game->music_speed.target = 1;
 
-		draw_menu_background(ortho, view_inv);
 		if(do_button(S("Play"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
 			add_state_transition(&game->state0, e_game_state0_play, game->render_time, c_transition_time);
 			game->do_hard_reset = true;
@@ -756,7 +528,6 @@ func void render(float interp_dt, float delta)
 			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 		}
 
-		draw_game_name();
 		// draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_rrr(1), true, &game->font, zero, 0);
 		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
 
@@ -778,8 +549,6 @@ func void render(float interp_dt, float delta)
 		game->speed = 0;
 		game->music_speed.target = 1;
 
-		draw_menu_background(ortho, view_inv);
-
 		if(do_button(S("Resume"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
 			pop_state_transition(&game->state0, game->render_time, c_transition_time);
 		}
@@ -795,7 +564,6 @@ func void render(float interp_dt, float delta)
 			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 		}
 
-		draw_game_name();
 		// draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_rrr(1), true, &game->font, zero, 0);
 		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
 
@@ -811,7 +579,6 @@ func void render(float interp_dt, float delta)
 	if(should_do_leaderboard_menu) {
 		game->speed = 0;
 		game->music_speed.target = 1;
-		draw_ground(ortho, view_inv);
 		do_leaderboard();
 	}
 
@@ -855,8 +622,6 @@ func void render(float interp_dt, float delta)
 		game->speed = 0;
 		game->music_speed.target = 1;
 
-		draw_ground(ortho, view_inv);
-
 		s_v2 button_size = v2(600, 48);
 		s_container container = make_down_center_x_container(make_rect(wxy(0.0f, 0.05f), c_world_size), button_size, 32);
 
@@ -865,11 +630,6 @@ func void render(float interp_dt, float delta)
 		{
 			s_len_str text = format_text("Lights: %s", game->disable_lights ? "Off" : "On");
 			do_bool_button_ex(text, container_get_pos_and_advance(&container), button_size, false, &game->disable_lights);
-		}
-
-		{
-			s_len_str text = format_text("Walk sound: %s", game->disable_walk_sound ? "Off" : "On");
-			do_bool_button_ex(text, container_get_pos_and_advance(&container), button_size, false, &game->disable_walk_sound);
 		}
 
 		b8 escape = is_key_pressed(SDLK_ESCAPE, true);
@@ -889,20 +649,7 @@ func void render(float interp_dt, float delta)
 	if(should_do_play) {
 		game->speed = wanted_speed;
 		game->music_speed.target = 1;
-
-		handle_state(&hard_data->state1, game->render_time);
-
-		e_game_state1 state1 = (e_game_state1)get_state(&hard_data->state1);
-		switch(state1) {
-			xcase e_game_state1_default: {
-				should_do_game = true;
-			}
-			xcase e_game_state1_defeat: {
-				should_do_game = true;
-				do_defeat = true;
-				game->music_speed.target = 0.5f;
-			}
-		}
+		should_do_game = true;
 	}
 
 	if(should_do_input_name_menu) {
@@ -911,8 +658,6 @@ func void render(float interp_dt, float delta)
 		s_input_name_state* state = &game->input_name_state;
 		float font_size = 36;
 		s_v2 pos = c_world_size * v2(0.5f, 0.4f);
-
-		draw_ground(ortho, view_inv);
 
 		int count_before = state->name.str.count;
 		b8 submitted = handle_string_input(&state->name, game->render_time);
@@ -991,13 +736,6 @@ func void render(float interp_dt, float delta)
 
 		b8 do_game_ui = true;
 
-		draw_ground(ortho, view_inv);
-
-		if(soft_data->press_input.q && soft_data->machine_to_place.valid) {
-			soft_data->machine_to_place = zero;
-			soft_data->press_input.q = false;
-		}
-
 		s_v2i topleft_index;
 		s_v2i bottomright_index;
 		{
@@ -1019,237 +757,10 @@ func void render(float interp_dt, float delta)
 			bottomright_index.y = at_most(c_chunk_count - 1, bottomright_index.y + 1);
 		}
 
-		{
-			s_rect camera_bounds = get_camera_bounds(view_inv);
-
-			soft_data->machine_animation_time += delta * 8;
-			if(soft_data->current_research.valid) {
-				soft_data->researcher_animation_time += delta * 8;
-			}
-
-			for(int chunk_y = topleft_index.y; chunk_y <= bottomright_index.y; chunk_y += 1) {
-				for(int chunk_x = topleft_index.x; chunk_x <= bottomright_index.x; chunk_x += 1) {
-					s_rng chunk_rng = make_rng(chunk_x * chunk_y);
-					// s_v4 tile_color = rand_color(&chunk_rng);
-					s_v2i chunk_index = v2i(chunk_x, chunk_y);
-					b8 is_unlocked = is_chunk_unlocked_v2i(chunk_index);
-					b8 is_unlockable = !is_unlocked && are_any_adjacent_chunks_unlocked(chunk_index);
-					if(is_unlocked) {
-						for(int y = chunk_y * c_chunk_size; y < chunk_y * c_chunk_size + c_chunk_size; y += 1) {
-							for(int x = chunk_x * c_chunk_size; x < chunk_x * c_chunk_size + c_chunk_size; x += 1) {
-								// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw terrain start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-								if(soft_data->natural_terrain_arr[y][x] != e_tile_none) {
-									s_v2 pos = v2(x, y) * c_tile_size + c_tile_size_v * 0.5f;
-									s_v2i atlas_index = c_tile_atlas_index[soft_data->natural_terrain_arr[y][x]];
-									s_rng rng = make_rng(x * y);
-									float rotation = randf32_11(&rng) * 0.2f;
-									s_v4 tile_color = make_rrr(randf_range(&rng, 0.8f, 1.0f) * 0.75f);
-									draw_atlas_ex(game->superku, pos, c_tile_size_v * 2.0f, atlas_index, tile_color, rotation, zero, 0);
-								}
-								// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw terrain end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-								// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw machines start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-								{
-									e_machine machine = soft_data->machine_arr[y][x];
-									if(machine != e_machine_none) {
-										s_v2i tile_index = v2i(x, y);
-										s_v2 pos = v2(x, y) * c_tile_size;
-										s_v2 size = c_tile_size_v * (float)g_machine_data[machine].size;
-										b8 hovered = mouse_vs_rect_topleft(world_mouse, pos, size);
-										s_v4 color = make_rrr(1);
-										s_v2 tile_center = pos + c_tile_size_v * 0.5f * (float)g_machine_data[machine].size;
-										if(hovered && !soft_data->machine_to_place.valid) {
-											draw_selector_center(tile_center, size * 1.15f * sin_range(0.95f, 1.05f, game->render_time * 20), 1.0f, 2);
-											if(soft_data->press_input.q) {
-												soft_data->press_input.q = false;
-												soft_data->machine_to_place = maybe(machine);
-												set_maybe_if_invalid(&game->tutorial.used_q, game->render_time);
-											}
-										}
-										int frame_index = roundfi(soft_data->machine_animation_time) % g_machine_data[machine].frame_count;
-										if(machine == e_machine_research_1 || machine == e_machine_research_2 || machine == e_machine_research_3) {
-											frame_index = roundfi(soft_data->researcher_animation_time) % g_machine_data[machine].frame_count;
-										}
-										s_v2i atlas_index = g_machine_data[machine].frame_arr[frame_index];
-										if(machine == e_machine_collector_1) {
-											draw_light(tile_center, 128, make_rgb(0.2f, 0.1f, 0.1f), 0.1f, 3);
-										}
-										else if(machine == e_machine_collector_2) {
-											draw_light(tile_center, 128, make_rgb(0.1f, 0.2f, 0.1f), 0.1f, 3);
-										}
-										else if(machine == e_machine_collector_3) {
-											draw_light(tile_center, 128, make_rgb(0.1f, 0.1f, 0.2f), 0.1f, 3);
-										}
-										draw_atlas(game->superku, tile_center, size * 1.5f, atlas_index, color, 1);
-										int dist = get_tile_distance_from_player_to_machine(player.pos, tile_index, machine);
-										b8 in_range = dist <= get_player_tile_reach();
-										if(hovered && !soft_data->open_inventory_timestamp.valid && is_key_down(c_right_button)) {
-											if(in_range) {
-												sell_machine(tile_index, machine);
-											}
-											else {
-												s_len_str str = str_from_place_result(e_place_result_out_of_reach);
-												add_non_spammy_message(world_mouse, str);
-											}
-										}
-									}
-								}
-								// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw machines end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-							}
-						}
-					}
-					else {
-
-						s_rect chunk_rect = get_chunk_rect(chunk_index);
-						draw_atlas_topleft(game->atlas, chunk_rect.pos, chunk_rect.size, v2i(0, 0), make_rrr(0.0f), 0);
-
-						if(is_unlockable) {
-							int chunk_cost = get_chunk_unlock_cost(chunk_index);
-							b8 can_afford_chunk = can_afford(soft_data->currency, chunk_cost);
-							{
-								constexpr float font_size = 128;
-								s_len_str text = format_text("$$FFFFFF%i$.", chunk_cost);
-								if(!can_afford_chunk) {
-									text = format_text("$$FF0000%i$.", chunk_cost);
-								}
-								s_v2 text_pos = get_chunk_center(chunk_index);
-
-								// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		try to keep the chunk cost on screen in a very dumb way start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-								{
-									s_v2 dir = v2_dir_from_to(text_pos, player_pos);
-									constexpr float movement_per_step = 2;
-									float distance_moved = 0;
-									s_v2 text_size = get_text_size(format_text("%i", chunk_cost), &game->font, font_size);
-									s_rect temp_bounds = expand_rect_sides_from_center(camera_bounds, -256);
-									while(true) {
-										b8 is_on_screen = rect_vs_rect_topleft(temp_bounds.pos, temp_bounds.size, text_pos - text_size * 0.5f, text_size);
-										if(is_on_screen) {
-											break;
-										}
-										text_pos += dir * movement_per_step;
-										distance_moved += movement_per_step;
-										if(distance_moved >= 650) {
-											break;
-										}
-									}
-								}
-								// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		try to keep the chunk cost on screen in a very dumb way end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-								draw_text(text, text_pos, font_size, make_rrr(1), true, &game->font, zero, 2);
-							}
-
-							if(!soft_data->open_inventory_timestamp.valid && mouse_vs_rect_topleft(world_mouse, chunk_rect.pos, chunk_rect.size)) {
-								draw_atlas(game->atlas, chunk_rect.pos + chunk_rect.size * 0.5f, chunk_rect.size, v2i(0, 0), make_rrr(0.2f), 0);
-								if(!soft_data->open_inventory_timestamp.valid && is_key_pressed(c_left_button, true) && can_afford_chunk) {
-									unlock_chunk_v2i(chunk_index);
-									add_currency(-chunk_cost);
-									play_sound(e_sound_upgrade, zero);
-								}
-							}
-						}
-					}
-				}
-			}
-
-			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		placing start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-			if(soft_data->machine_to_place.valid) {
-				e_machine machine = soft_data->machine_to_place.value;
-				s_v2i tile_index = tile_index_from_pos(world_mouse);
-				if(!is_key_down(c_left_shift)) {
-					soft_data->shift_start = tile_index;
-				}
-				s_v2i topleft = soft_data->shift_start;
-				s_v2i bottomright = tile_index;
-				if(topleft.x > bottomright.x) {
-					int m = (topleft.x - bottomright.x) % g_machine_data[machine].size;
-					swap(&topleft.x, &bottomright.x);
-					topleft.x += m;
-				}
-				if(topleft.y > bottomright.y) {
-					int m = (topleft.y - bottomright.y) % g_machine_data[machine].size;
-					swap(&topleft.y, &bottomright.y);
-					topleft.y += m;
-				}
-				topleft.x = clamp(topleft.x, 0, c_max_tiles - 1);
-				topleft.y = clamp(topleft.y, 0, c_max_tiles - 1);
-				bottomright.x = clamp(bottomright.x, 0, c_max_tiles - 1);
-				bottomright.y = clamp(bottomright.y, 0, c_max_tiles - 1);
-				if(bottomright.x - topleft.x >= g_machine_data[machine].size || bottomright.y - topleft.y >= g_machine_data[machine].size) {
-					set_maybe_if_invalid(&game->tutorial.used_shift, game->render_time);
-				}
-
-				{
-					s_v2i curr_index = topleft;
-					b8 placed_something = false;
-					while(true) {
-						s_v2i chunk_index = chunk_index_from_tile_index(curr_index);
-						s_v2 pos = c_tile_size_v * curr_index;
-						float machine_size = (float)g_machine_data[machine].size;
-						s_v2 size = c_tile_size_v * machine_size;
-						s_v2i atlas_index = g_machine_data[machine].frame_arr[0];
-						e_place_result place_result = can_we_place_machine(player.pos, chunk_index, curr_index, machine, soft_data->currency);
-						s_v4 color = make_rgb(0, 1, 0);
-						if(place_result == e_place_result_out_of_reach) {
-							color = make_rgb(0, 0, 1);
-						}
-						else if(place_result != e_place_result_success) {
-							color = make_rgb(1, 0, 0);
-						}
-						s_v2 tile_center = pos + c_tile_size_v * 0.5f * machine_size;
-						draw_atlas(game->superku, tile_center, size * 1.5f, atlas_index, set_alpha(color, 0.5f), 2);
-
-						if(!game->soft_data.open_inventory_timestamp.valid && is_key_down(c_left_button)) {
-							if(place_result == e_place_result_success) {
-								place_machine(curr_index, machine);
-								placed_something = true;
-								add_currency(-get_machine_cost(machine));
-							}
-							else {
-								s_len_str str = str_from_place_result(place_result);
-								if(str.count > 0) {
-									add_non_spammy_message(world_mouse, str);
-								}
-							}
-						}
-
-						curr_index.x += g_machine_data[machine].size;
-						if(curr_index.x > bottomright.x) {
-							curr_index.y += g_machine_data[machine].size;
-							curr_index.x = topleft.x;
-							if(curr_index.y > bottomright.y) { break; }
-						}
-					}
-					if(placed_something) {
-						play_sound(e_sound_key, zero);
-					}
-				}
-			}
-			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		placing end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-		}
-
 		do_basic_render_flush(view_projection, 0, view_inv);
 		do_basic_render_flush(view_projection, 1, view_inv);
 		do_basic_render_flush(view_projection, 2, view_inv);
 
-		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		{
-			float wanted_rotation = v2_angle(player.last_dir);
-			s_entity* temp_player = &entity_arr->data[c_first_index[e_entity_player]];
-			if(temp_player->walking) {
-				float player_speed = get_player_speed();
-				float p = player_speed / c_base_player_speed;
-				temp_player->animation_time += delta * p;
-			}
-			if(temp_player->animation_time >= 0.1f) {
-				temp_player->animation_time -= 0.1f;
-				temp_player->animation_index = 4 + circular_index(temp_player->animation_index + 1, 4);
-			}
-			temp_player->rotation = lerp_angle(temp_player->rotation, wanted_rotation + c_pi * 0.5f, delta * 10);
-			draw_atlas_ex(game->superku, player_pos, c_player_size_v * 2, v2i(temp_player->animation_index, 7), make_rrr(1), temp_player->rotation, zero, 0);
-
-			draw_light(player_pos, 512, make_rrr(1), 0.1f, 3);
-		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		do_basic_render_flush(view_projection, 0, view_inv);
 
@@ -1316,128 +827,6 @@ func void render(float interp_dt, float delta)
 				}
 				// ------------------------------------------------------------------------
 
-				time_passed = 0;
-				if(game->tutorial.zoomed.valid) {
-					time_passed = game->render_time - game->tutorial.zoomed.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("Mouse wheel to zoom"), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.opened_inventory.valid) {
-					time_passed = game->render_time - game->tutorial.opened_inventory.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.4f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_E), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4 + 0)), v2(font_size), alpha, 0);
-					draw_text(S("to open menu"), pos + v2(advance * 1, 0), font_size, make_ra(1, alpha), false, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.placed_collector.valid) {
-					time_passed = game->render_time - game->tutorial.placed_collector.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("Build a collector (it costs pure energy)\n     It will collect raw energy"), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.placed_processor.valid) {
-					time_passed = game->render_time - game->tutorial.placed_processor.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("            Build a processor\nIt will convert raw energy into pure energy"), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.started_a_research.valid) {
-					time_passed = game->render_time - game->tutorial.started_a_research.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("   Open the menu and start a research\n(You can pause it by clicking on it again)"), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.placed_researcher.valid) {
-					time_passed = game->render_time - game->tutorial.placed_researcher.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.89f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("                    Build a researcher\nIt will consume pure energy until the research completes\n      (Build more researchers to research faster)"), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.deleted_machine.valid) {
-					time_passed = game->render_time - game->tutorial.deleted_machine.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("Right click a machine to delete it\n (you get your pure energy back)"), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.used_q.valid) {
-					time_passed = game->render_time - game->tutorial.used_q.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.1f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_Q), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4 + 0)), v2(font_size), alpha, 0);
-					draw_text(S("on a machine to begin placing that type of machine"), pos + v2(advance * 1, 0), font_size, make_ra(1, alpha), false, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.used_shift.valid) {
-					time_passed = game->render_time - game->tutorial.used_shift.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("When placing machines, hold shift\n to place in a rectangle pattern"), pos + v2(advance * 1, sin_range(-10, 10, game->render_time * 4 + 0)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				time_passed = 0;
-				if(game->tutorial.unlocked_chunk.valid) {
-					time_passed = game->render_time - game->tutorial.unlocked_chunk.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_text(S("Click on an unrevealed area to reveal it\n        (It costs pure energy)"), pos + v2(advance * 1, sin_range(-10, 10, game->render_time * 4 + 0)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
 				set_maybe_if_invalid(&game->tutorial.tutorial_end, game->render_time);
 
 				time_passed = 0;
@@ -1493,48 +882,6 @@ func void render(float interp_dt, float delta)
 			}
 
 			{
-				s_v2 pos = container_get_pos_and_advance(&container);
-				s_v2 size = v2(48);
-				s_v2 icon_pos = pos + size * 0.5f;
-				s_v2 icon_size = size * 1.75f;
-				draw_atlas(game->superku, icon_pos, icon_size, v2i(7, 6), make_rrr(1), 0);
-				pos.x += size.x + 4;
-				s_len_str text = format_text("%i", soft_data->currency);
-				draw_text(text, pos, 48, make_rrr(1), false, &game->font, zero, 0);
-
-				if(!soft_data->open_inventory_timestamp.valid && mouse_vs_rect_center(g_mouse, icon_pos, size)) {
-					game->tooltip = S("Pure energy");
-				}
-			}
-
-			{
-				s_v2 pos = container_get_pos_and_advance(&container);
-				s_v2 size = v2(48);
-				s_v2 icon_pos = pos + size * 0.5f;
-				s_v2 icon_size = size * 1.75f;
-				draw_atlas(game->superku, icon_pos, icon_size, v2i(6, 6), make_rrr(1), 0);
-				pos.x += size.x + 4;
-				s_len_str text = format_text("%i", soft_data->raw_currency);
-				draw_text(text, pos, 48, make_rrr(1), false, &game->font, zero, 0);
-
-				if(!soft_data->open_inventory_timestamp.valid && mouse_vs_rect_center(g_mouse, icon_pos, size)) {
-					game->tooltip = S("Raw energy");
-				}
-			}
-
-			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		research progress bar start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-			if(soft_data->current_research.valid) {
-				e_research r = soft_data->current_research.value;
-				s_v2 pos = wxy(0.78f, 0.03f);
-				s_v2 under_size = wxy(0.2f, 0.03f);
-				float research_percentage = soft_data->spent_on_research_arr[r] / (float)g_research_data[r].cost;
-				s_v2 over_size = v2(under_size.x * research_percentage, under_size.y);
-				draw_rect_topleft(pos, under_size, make_rrr(0.5f), 0);
-				draw_rect_topleft(pos, over_size, make_rrr(1), 0);
-			}
-			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		research progress bar end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-			{
 				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
 				data.projection = ortho;
 				data.blend_mode = e_blend_mode_normal;
@@ -1550,142 +897,6 @@ func void render(float interp_dt, float delta)
 			// 	render_flush(data, true, 0);
 			// }
 		}
-
-		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		inventory start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		{
-			if(soft_data->open_inventory_timestamp.valid) {
-				float p = at_most(1.0f, game->render_time - soft_data->open_inventory_timestamp.value);
-				p = ease_out_back_advanced(p, 0, 0.33f, 0, 1);
-				draw_rect(c_world_center, c_world_center * 1.75f * p, make_ra(0.0f, 0.75f), 0);
-
-				{
-					draw_atlas(game->superku, wxy(0.45f, 0.2f), v2(220 * p), v2i(6, 0), make_rrr(1), 0);
-					draw_atlas(game->superku, wxy(0.45f, 0.5f), v2(220 * p), v2i(6, 1), make_rrr(1), 0);
-					draw_atlas(game->superku, wxy(0.45f, 0.8f), v2(220 * p), v2i(6, 2), make_rrr(1), 0);
-				}
-
-
-				s_v2 rect_size = v2(64) * p;
-
-				{
-					e_machine arr[] = {
-						e_machine_collector_1, e_machine_collector_2, e_machine_collector_3,
-						e_machine_processor_1, e_machine_processor_2, e_machine_processor_3,
-						e_machine_research_1, e_machine_research_2, e_machine_research_3,
-						e_machine_pure_collector_1, e_machine_pure_collector_2, e_machine_pure_collector_3,
-					};
-					draw_text(S("Machines"), wxy(0.1f, 0.13f), 48 * p, make_rrr(1), false, &game->font, zero, 1);
-					draw_text(S("Research"), wxy(0.6f, 0.13f), 48 * p, make_rrr(1), false, &game->font, zero, 1);
-					s_v2 base_pos = wxy(0.1f, 0.2f);
-					s_v2 pos = base_pos;
-					for(int i = 0; i < array_count(arr); i += 1) {
-						e_machine machine = arr[i];
-						b8 unlocked = is_machine_unlocked(machine);
-						b8 hovered = mouse_vs_rect_topleft(g_mouse, pos, rect_size);
-						float flash = 0.7f;
-						if(hovered) {
-							if(unlocked) {
-								game->tooltip = get_machine_tooltip(machine);
-							}
-							else {
-								game->tooltip = S("Research to unlock!");
-							}
-							flash = 1;
-						}
-						s_v2i atlas_index = g_machine_data[machine].frame_arr[0];
-						if(unlocked) {
-							if(hovered && is_key_pressed(c_left_button, true)) {
-								soft_data->machine_to_place = maybe(machine);
-								soft_data->open_inventory_timestamp = zero;
-							}
-							s_v2 rect_center = pos + rect_size * 0.5f;
-							draw_atlas(game->superku, rect_center - v2(0, 4), rect_size * 1.5f, atlas_index, make_rrr(flash), 1);
-							draw_atlas_topleft(game->atlas, pos, rect_size, v2i(0, 0), make_rrr(flash * 0.5f), 1);
-						}
-						else {
-							draw_undiscovered_slot(pos, rect_size, flash);
-						}
-						pos.x += 80;
-						if((i + 1) % 3 == 0) {
-							pos.x = base_pos.x;
-							pos.y += 80;
-						}
-					}
-				}
-
-				{
-					s_list<e_research, e_research_count> satisfied_arr = zero;
-					s_list<e_research, e_research_count> unsatisfied_arr = zero;
-					for_enum(research_i, e_research) {
-						if(soft_data->research_completed_timestamp_arr[research_i].valid) {
-							continue;
-						}
-						b8 requirements_satisfied = are_research_requirements_satisfied(research_i);
-						if(requirements_satisfied) {
-							satisfied_arr.add(research_i);
-						}
-						else {
-							unsatisfied_arr.add(research_i);
-						}
-					}
-
-					s_v2 base_pos = wxy(0.6f, 0.2f);
-					int column = 0;
-					int row = 0;
-					foreach_val(research_i, research, satisfied_arr) {
-						s_v2 pos = base_pos + v2(column * 80, row * 80);
-						float flash = 0.7f;
-						b8 hovered = mouse_vs_rect_topleft(g_mouse, pos, rect_size);
-						if(hovered) {
-							flash = 1;
-							game->tooltip = get_research_tooltip(research);
-						}
-						if(soft_data->current_research.valid && soft_data->current_research.value == research) {
-							flash = sin_range(0.5f, 1.0f, game->render_time * 15);
-						}
-						s_v4 color = make_rrr(flash);
-						draw_atlas_topleft(game->atlas, pos, rect_size, v2i(0, 0), make_rrr(flash * 0.5f), 0);
-						draw_atlas_topleft(game->atlas, pos, rect_size, v2i(6, 0), color, 1);
-
-						if(hovered && is_key_pressed(c_left_button, true)) {
-							if(soft_data->current_research.valid && soft_data->current_research.value == research) {
-								soft_data->current_research = zero;
-							}
-							else {
-								soft_data->current_research = maybe(research);
-								set_maybe_if_invalid(&game->tutorial.started_a_research, game->render_time);
-							}
-							soft_data->open_inventory_timestamp = zero;
-						}
-						column += 1;
-						if(column >= 5) {
-							column = 0;
-							row += 1;
-						}
-					}
-					foreach_val(research_i, research, unsatisfied_arr) {
-						s_v2 pos = base_pos + v2(column * 80, row * 80);
-						float flash = 0.7f;
-						b8 hovered = mouse_vs_rect_topleft(g_mouse, pos, rect_size);
-						if(hovered) {
-							flash = 1;
-							game->tooltip = S("Research to unlock!");
-						}
-						draw_undiscovered_slot(pos, rect_size, flash);
-						column += 1;
-						if(column >= 5) {
-							column = 0;
-							row += 1;
-						}
-					}
-				}
-
-				do_basic_render_flush(ortho, 0, view_inv);
-				do_basic_render_flush(ortho, 1, view_inv);
-				do_basic_render_flush(ortho, 2, view_inv);
-			}
-		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		inventory end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		if(game->tooltip.count > 0) {
 			float font_size = 32;
@@ -1718,31 +929,9 @@ func void render(float interp_dt, float delta)
 			s_container container = make_down_center_x_container(rect, size, 10);
 
 			{
-				s_len_str text = format_text("10x movement speed: %s", game->fast_player_speed ? "On" : "Off");
-				do_bool_button_ex(text, container_get_pos_and_advance(&container), size, false, &game->fast_player_speed);
-			}
-
-			{
-				s_len_str text = format_text("Super reach: %s", game->player_super_reach ? "On" : "Off");
-				do_bool_button_ex(text, container_get_pos_and_advance(&container), size, false, &game->player_super_reach);
-			}
-
-			{
-				s_len_str text = format_text("Free research: %s", game->free_research ? "On" : "Off");
-				do_bool_button_ex(text, container_get_pos_and_advance(&container), size, false, &game->free_research);
-			}
-
-			{
 				s_len_str text = format_text("Reset zoom");
 				if(do_button_ex(text, container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
 					soft_data->zoom = 1;
-				}
-			}
-
-			{
-				s_len_str text = format_text("+10000000 currency");
-				if(do_button_ex(text, container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
-					soft_data->currency += 10000000;
 				}
 			}
 
@@ -2785,17 +1974,6 @@ func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff)
 	lerpable->curr = lerp_snap(lerpable->curr, lerpable->target, dt, max_diff);
 }
 
-func float get_player_speed()
-{
-	s_stats stats = get_stats();
-	float result = c_base_player_speed;
-	if(game->fast_player_speed) {
-		result *= 10;
-	}
-	result *= 1.0f + stats.arr[e_stat_player_movement_speed] / 100.0f;
-	return result;
-}
-
 func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv)
 {
 	s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
@@ -2821,84 +1999,11 @@ func s_rect get_chunk_rect(s_v2i index)
 	return result;
 }
 
-func b8 is_chunk_unlocked(int x, int y)
-{
-	if(x < 0 || x >= c_chunk_count || y < 0 || y >= c_chunk_count) {
-		return false;
-	}
-	b8 result = game->soft_data.purchased_chunk_arr[y][x];
-	return result;
-}
-
-func b8 is_chunk_unlocked_v2i(s_v2i index)
-{
-	b8 result = is_chunk_unlocked(index.x, index.y);
-	return result;
-}
-
-func b8 are_any_adjacent_chunks_unlocked(s_v2i index)
-{
-	s_v2i offset_arr[] = {
-		v2i(0, -1), v2i(-1, 0), v2i(1, 0), v2i(0, 1)
-	};
-	b8 result = false;
-	for(int i = 0; i < 4; i += 1) {
-		if(is_chunk_unlocked_v2i(index + offset_arr[i])) {
-			result = true;
-			break;
-		}
-	}
-	return result;
-}
-
-func void unlock_chunk_v2i(s_v2i index)
-{
-	assert(index.x >= 0);
-	assert(index.x < c_chunk_count);
-	assert(index.y >= 0);
-	assert(index.y < c_chunk_count);
-	assert(!is_chunk_unlocked_v2i(index));
-	game->soft_data.purchased_chunk_arr[index.y][index.x] = true;
-	if(index != v2i(c_starting_chunk, c_starting_chunk)) {
-		set_maybe_if_invalid(&game->tutorial.unlocked_chunk, game->render_time);
-	}
-}
-
-func int get_chunk_unlock_cost(s_v2i index)
-{
-	assert(index.x >= 0);
-	assert(index.x < c_chunk_count);
-	assert(index.y >= 0);
-	assert(index.y < c_chunk_count);
-	assert(!is_chunk_unlocked_v2i(index));
-	int distance = abs(index.x - c_starting_chunk) + abs(index.y - c_starting_chunk);
-	int result = distance * 50;
-	return result;
-}
-
 func s_v2 get_chunk_center(s_v2i index)
 {
 	s_rect rect = get_chunk_rect(index);
 	s_v2 result = rect.pos + rect.size * 0.5f;
 	return result;
-}
-
-func b8 can_afford(int currency, int cost)
-{
-	b8 result = currency >= cost;
-	return result;
-}
-
-func void add_currency(int currency)
-{
-	game->soft_data.currency += currency;
-	assert(game->soft_data.currency >= 0);
-}
-
-func void add_raw_currency(int currency)
-{
-	game->soft_data.raw_currency += currency;
-	assert(game->soft_data.raw_currency >= 0);
 }
 
 func s_rect get_camera_bounds(s_m4 view_inv)
@@ -2930,398 +2035,10 @@ func s_v2i tile_index_from_pos(s_v2 pos)
 	return result;
 }
 
-func void place_machine(s_v2i tile_index, e_machine machine)
-{
-	assert(game->soft_data.machine_arr[tile_index.y][tile_index.x] == e_machine_none);
-	game->soft_data.machine_arr[tile_index.y][tile_index.x] = machine;
-	game->soft_data.machine_count_arr[machine] += 1;
-	if(machine == e_machine_collector_1) {
-		set_maybe_if_invalid(&game->tutorial.placed_collector, game->render_time);
-	}
-	else if(machine == e_machine_processor_1) {
-		set_maybe_if_invalid(&game->tutorial.placed_processor, game->render_time);
-	}
-	else if(machine == e_machine_research_1) {
-		set_maybe_if_invalid(&game->tutorial.placed_researcher, game->render_time);
-	}
-}
-
-func e_place_result can_we_place_machine(s_v2 player_pos, s_v2i chunk_index, s_v2i tile_index, e_machine machine, int currency)
-{
-	if(!is_chunk_unlocked_v2i(chunk_index)) {
-		return e_place_result_chunk_locked;
-	}
-
-	{
-		int dist = get_tile_distance_from_player_to_machine(player_pos, tile_index, machine);
-		b8 in_range = dist <= get_player_tile_reach();
-		if(!in_range) {
-			return e_place_result_out_of_reach;
-		}
-	}
-
-	e_place_result result = e_place_result_success;
-
-	int x_offset = tile_index.x - (c_biggest_machine_tile_size - 1);
-	int y_offset = tile_index.y - (c_biggest_machine_tile_size - 1);
-
-	s_array2d<b8, c_biggest_machine_tile_size * 3, c_biggest_machine_tile_size * 3> mask = zero;
-	s_soft_game_data* soft_data = &game->soft_data;
-
-	{
-		int min_x = at_least(0, tile_index.x - (c_biggest_machine_tile_size - 1));
-		int min_y = at_least(0, tile_index.y - (c_biggest_machine_tile_size - 1));
-		int max_x = at_most(c_max_tiles - 1, tile_index.x + (c_biggest_machine_tile_size - 1));
-		int max_y = at_most(c_max_tiles - 1, tile_index.y + (c_biggest_machine_tile_size - 1));
-		for(int y = min_y; y <= max_y; y += 1) {
-			for(int x = min_x; x <= max_x; x += 1) {
-				e_machine placed_machine = soft_data->machine_arr[y][x];
-				int placed_machine_size = g_machine_data[placed_machine].size;
-				for(int yy = 0; yy < placed_machine_size; yy += 1) {
-					for(int xx = 0; xx < placed_machine_size; xx += 1) {
-						mask[y + yy - y_offset][x + xx - x_offset] = true;
-					}
-				}
-			}
-		}
-	}
-	int to_place_size = g_machine_data[machine].size;
-	int max_x = at_most(c_max_tiles - 1, tile_index.x + to_place_size - 1);
-	int max_y = at_most(c_max_tiles - 1, tile_index.y + to_place_size - 1);
-	b8 collision = false;
-	b8 touches_resource = false;
-	b8 touches_unlocked_chunk = false;
-	for(int y = tile_index.y; y <= max_y; y += 1) {
-		for(int x = tile_index.x; x <= max_x; x += 1) {
-			s_v2i temp_chunk_index = chunk_index_from_tile_index(v2i(x, y));
-			if(mask[y - y_offset][x - x_offset]) {
-				collision = true;
-			}
-			if(!is_chunk_unlocked_v2i(temp_chunk_index)) {
-				touches_unlocked_chunk = true;
-			}
-
-			if(machine == e_machine_collector_1) {
-				if(soft_data->natural_terrain_arr[y][x] == e_tile_resource_1) {
-					touches_resource = true;
-				}
-			}
-			else if(machine == e_machine_collector_2) {
-				if(soft_data->natural_terrain_arr[y][x] == e_tile_resource_2) {
-					touches_resource = true;
-				}
-			}
-			else if(machine == e_machine_collector_3) {
-				if(soft_data->natural_terrain_arr[y][x] == e_tile_resource_3) {
-					touches_resource = true;
-				}
-			}
-		}
-	}
-
-	if(g_machine_data[machine].requires_resource && !touches_resource) {
-		result = e_place_result_requires_resource;
-	}
-	else if(touches_unlocked_chunk) {
-		result = e_place_result_chunk_locked;
-	}
-	else if(collision) {
-		result = e_place_result_occupied;
-	}
-	else if(!can_afford(currency, get_machine_cost(machine))) {
-		return e_place_result_currency;
-	}
-
-	return result;
-}
-
-func s_v2i chunk_index_from_tile_index(s_v2i tile_index)
-{
-	s_v2i result = v2i(
-		tile_index.x / c_chunk_size,
-		tile_index.y / c_chunk_size
-	);
-	return result;
-}
-
-func b8 is_machine_unlocked(e_machine machine)
-{
-	s_soft_game_data* soft_data = &game->soft_data;
-	b8 result = false;
-	switch(machine) {
-
-		xcase e_machine_collector_1: { result = true; }
-		xcase e_machine_collector_2: {
-			if(soft_data->research_completed_timestamp_arr[e_research_collector_2].valid) {
-				result = true;
-			}
-		}
-		xcase e_machine_collector_3: {
-			if(soft_data->research_completed_timestamp_arr[e_research_collector_3].valid) {
-				result = true;
-			}
-		}
-
-		xcase e_machine_pure_collector_1: {
-			if(soft_data->research_completed_timestamp_arr[e_research_pure_collector_1].valid) {
-				result = true;
-			}
-		}
-		xcase e_machine_pure_collector_2: {
-			if(soft_data->research_completed_timestamp_arr[e_research_pure_collector_2].valid) {
-				result = true;
-			}
-		}
-		xcase e_machine_pure_collector_3: {
-			if(soft_data->research_completed_timestamp_arr[e_research_pure_collector_3].valid) {
-				result = true;
-			}
-		}
-
-		xcase e_machine_processor_1: { result = true; }
-		xcase e_machine_processor_2: {
-			if(soft_data->research_completed_timestamp_arr[e_research_processor_2].valid) {
-				result = true;
-			}
-		}
-
-		xcase e_machine_processor_3: {
-			if(soft_data->research_completed_timestamp_arr[e_research_processor_3].valid) {
-				result = true;
-			}
-		}
-
-		xcase e_machine_research_1: { result = true; }
-
-		xcase e_machine_research_2: {
-			if(soft_data->research_completed_timestamp_arr[e_research_research_2].valid) {
-				result = true;
-			}
-		}
-		xcase e_machine_research_3: {
-			if(soft_data->research_completed_timestamp_arr[e_research_research_3].valid) {
-				result = true;
-			}
-		}
-
-		break; invalid_default_case;
-	}
-	return result;
-}
-
-func b8 is_resource_tile(e_tile tile)
-{
-	b8 result = tile == e_tile_resource_1 || tile == e_tile_resource_2 || tile == e_tile_resource_3;
-	return result;
-}
-
-func int get_machine_cost(e_machine machine)
-{
-	int result = g_machine_data[machine].cost;
-	return result;
-}
-
-func void remove_machine(s_v2i tile_index)
-{
-	e_machine machine = game->soft_data.machine_arr[tile_index.y][tile_index.x];
-	assert(machine != e_machine_none);
-	game->soft_data.machine_count_arr[machine] -= 1;
-	game->soft_data.machine_arr[tile_index.y][tile_index.x] = e_machine_none;
-	assert(game->soft_data.machine_count_arr[machine] >= 0);
-	set_maybe_if_invalid(&game->tutorial.deleted_machine, game->render_time);
-}
-
-func void sell_machine(s_v2i tile_index, e_machine machine)
-{
-	remove_machine(tile_index);
-	// @Fixme(tkap, 05/10/2025): should be currency spent, not current cost
-	add_currency(get_machine_cost(machine));
-	play_sound(e_sound_key, zero);
-}
-
-func s_len_str get_research_tooltip(e_research research)
-{
-	s_len_str result = zero;
-	s_research_data data = g_research_data[research];
-	switch(research) {
-
-		case e_research_player_speed_1:
-		case e_research_player_speed_2:
-		case e_research_player_speed_3:
-		case e_research_player_speed_4: {
-			result = format_text("+%.0f%% player movement speed", data.value);
-		} break;
-
-		case e_research_player_tile_reach_1:
-		case e_research_player_tile_reach_2:
-		case e_research_player_tile_reach_3:
-		case e_research_player_tile_reach_4: {
-			result = format_text("+%.0f player tile reach", data.value);
-		} break;
-
-		xcase e_research_collector_2: {
-			result = format_text("Unlocks Collector Mk2");
-		}
-		xcase e_research_collector_3: {
-			result = format_text("Unlocks Collector Mk3");
-		}
-
-		xcase e_research_pure_collector_1: {
-			result = format_text("Unlocks Pure collector Mk1");
-		}
-		xcase e_research_pure_collector_2: {
-			result = format_text("Unlocks Pure collector Mk2");
-		}
-		xcase e_research_pure_collector_3: {
-			result = format_text("Unlocks Pure collector Mk3");
-		}
-
-		xcase e_research_processor_2: {
-			result = format_text("Unlocks Processor Mk2");
-		}
-		xcase e_research_processor_3: {
-			result = format_text("Unlocks Processor Mk3");
-		}
-
-		xcase e_research_research_2: {
-			result = format_text("Unlocks Researcher Mk2");
-		}
-		xcase e_research_research_3: {
-			result = format_text("Unlocks Researcher Mk3");
-		} break;
-
-		case e_research_collector_speed_1:
-		case e_research_collector_speed_2:
-		case e_research_collector_speed_3: {
-			result = format_text("+%.0f%% collector speed", data.value);
-		} break;
-
-		case e_research_processor_speed_1:
-		case e_research_processor_speed_2:
-		case e_research_processor_speed_3: {
-			result = format_text("+%.0f%% processor speed", data.value);
-		} break;
-
-		case e_research_research_speed_1:
-		case e_research_research_speed_2:
-		case e_research_research_speed_3: {
-			result = format_text("+%.0f%% researcher speed", data.value);
-		} break;
-
-		xcase e_research_win: {
-			result = format_text("This is it. YOU ARE THE COLLECTOR!");
-		}
-
-		break; invalid_default_case;
-	}
-	result = format_text("%.*s\nCost: %i", expand_str(result), data.cost);
-	return result;
-}
-
-func s_len_str get_machine_tooltip(e_machine machine)
-{
-	s_machine_data data = g_machine_data[machine];
-	s_str_builder<2048> builder;
-	builder.count = 0;
-	builder_add(&builder, "%.*s\n", expand_str(data.name));
-	builder_add_separator(&builder);
-	switch(machine) {
-		xcase e_machine_collector_1: {
-			builder_add(&builder, "Place on rockum to collect raw energy");
-		}
-		xcase e_machine_collector_2: {
-			builder_add(&builder, "Place on warum to collect a lot of raw energy\n(5x faster)");
-		}
-		xcase e_machine_collector_3: {
-			builder_add(&builder, "Place on starum to collect a huge amount raw energy\n(25x faster)");
-		}
-		xcase e_machine_processor_1: {
-			builder_add(&builder, "Convert raw energy into pure energy");
-		}
-		xcase e_machine_processor_2: {
-			builder_add(&builder, "Convert raw energy into pure energy, but faster\n(5x faster)");
-		}
-		xcase e_machine_processor_3: {
-			builder_add(&builder, "Convert raw energy into pure energy, but even faster\n(25x faster)");
-		}
-		xcase e_machine_research_1: {
-			builder_add(&builder, "Research new technology using pure energy");
-		}
-		xcase e_machine_research_2: {
-			builder_add(&builder, "Research new technology, but faster\n(5x faster)");
-		}
-		xcase e_machine_research_3: {
-			builder_add(&builder, "Research new technology, but even faster\n(25x faster)");
-		}
-		xcase e_machine_pure_collector_1: {
-			builder_add(&builder, "Turn air into pure energy, very slowly");
-		}
-		xcase e_machine_pure_collector_2: {
-			builder_add(&builder, "Turn air into pure energy, not as slow\n(5x faster)");
-		}
-		xcase e_machine_pure_collector_3: {
-			builder_add(&builder, "Turn air into pure energy\n(25x faster)");
-		}
-		break; invalid_default_case;
-	}
-	builder_add(&builder, "\n");
-	builder_add_separator(&builder);
-	builder_add(&builder, "Cost: %i", data.cost);
-	s_len_str result = builder_to_len_str_alloc(&builder, &game->render_frame_arena);
-	return result;
-}
-
 template <int n>
 func void builder_add_separator(s_str_builder<n>* builder)
 {
 	builder_add(builder, "$$888888--------------------$.\n");
-}
-
-func void draw_selector_center(s_v2 pos, s_v2 size, float brightness, int render_pass_index)
-{
-	s_v4 color = make_rrr(brightness);
-	float thick0 = 0.15f;
-	float thick1 = thick0 * 0.5f;
-	draw_rect_topleft(pos + size * v2(-0.5f, -0.5f), size * v2(thick0, thick1), color, render_pass_index);
-	draw_rect_topleft(pos + size * v2(-0.5f, -0.5f), size * v2(thick1, thick0), color, render_pass_index);
-
-	draw_rect_topleft(pos + size * v2(0.5f, -0.5f), size * v2(-thick0, thick1), color, render_pass_index);
-	draw_rect_topleft(pos + size * v2(0.5f, -0.5f), size * v2(-thick1, thick0), color, render_pass_index);
-
-	draw_rect_topleft(pos + size * v2(-0.5f, 0.5f), size * v2(thick0, -thick1), color, render_pass_index);
-	draw_rect_topleft(pos + size * v2(-0.5f, 0.5f), size * v2(thick1, -thick0), color, render_pass_index);
-
-	draw_rect_topleft(pos + size * v2(0.5f, 0.5f), size * v2(-thick0, -thick1), color, render_pass_index);
-	draw_rect_topleft(pos + size * v2(0.5f, 0.5f), size * v2(-thick1, -thick0), color, render_pass_index);
-}
-
-func int get_tile_distance_from_player_to_machine(s_v2 player_pos, s_v2i machine_tile_index, e_machine machine)
-{
-	int machine_size = g_machine_data[machine].size;
-	s_v2i player_tile_index = tile_index_from_pos(player_pos);
-	s_v2i arr[] = {
-		machine_tile_index, machine_tile_index + v2i(machine_size - 1, 0),
-		machine_tile_index + v2i(0, machine_size - 1), machine_tile_index + v2i(machine_size - 1, machine_size - 1),
-	};
-	int smallest_dist = 9999999;
-	for(int i = 0; i < array_count(arr); i += 1) {
-		int dist = abs(player_tile_index.x - arr[i].x) + abs(player_tile_index.y - arr[i].y);
-		if(dist < smallest_dist) {
-			smallest_dist = dist;
-		}
-	}
-	return smallest_dist;
-}
-
-func int get_player_tile_reach()
-{
-	s_stats stats = get_stats();
-	int result = 6;
-	result += roundfi(stats.arr[e_stat_player_tile_reach]);
-	if(game->player_super_reach) {
-		result += 100000;
-	}
-	return result;
 }
 
 func void add_non_spammy_message(s_v2 pos, s_len_str text)
@@ -3336,98 +2053,4 @@ func void add_non_spammy_message(s_v2 pos, s_len_str text)
 		fct.text = text;
 		entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
 	}
-}
-
-func s_len_str str_from_place_result(e_place_result place_result)
-{
-	s_len_str result = zero;
-	switch(place_result) {
-		xcase e_place_result_currency: {
-			result = format_text("Not enough pure energy");
-		}
-		xcase e_place_result_requires_resource: {
-			result = format_text("Must be built on the appropriate resource");
-		}
-		xcase e_place_result_out_of_reach: {
-			result = format_text("Out of reach");
-		}
-		// xcase e_place_result_occupied: {
-		// 	result = format_text("Occupied");
-		// }
-		xcase e_place_result_chunk_locked: {
-			result = format_text("This area hasn't been revealed");
-		}
-		break; default: {}
-	}
-	return result;
-}
-
-func s_stats get_stats()
-{
-	s_stats result = zero;
-	for_enum(research_i, e_research) {
-		s_research_data data = g_research_data[research_i];
-		if(data.target_stat.valid && game->soft_data.research_completed_timestamp_arr[research_i].valid) {
-			result.arr[data.target_stat.value] += data.value;
-		}
-	}
-	return result;
-}
-
-func b8 are_research_requirements_satisfied(e_research research)
-{
-	s_research_data data = g_research_data[research];
-	b8 result = true;
-	for(int i = 0; i < data.requirement_count; i += 1) {
-		e_research requirement = data.requirement_arr[i];
-		if(!game->soft_data.research_completed_timestamp_arr[requirement].valid) {
-			result = false;
-			break;
-		}
-	}
-	return result;
-}
-
-func void draw_undiscovered_slot(s_v2 pos, s_v2 rect_size, float flash)
-{
-	draw_atlas_topleft(game->atlas, pos, rect_size, v2i(0, 0), make_rrr(0.33f * flash), 1);
-	draw_atlas_topleft(game->atlas, pos, rect_size, v2i(1, 0), make_rrr(1.0f * flash), 2);
-}
-
-func void draw_game_name()
-{
-	s_v2 topleft = v2(84, 3108);
-	s_v2 bottomright = v2(1464, 3423);
-	s_v2 size = bottomright - topleft;
-	s_v2 aspect_ratio = v2(1, size.y / size.x);
-	s_instance_data data = zero;
-	data.model = m4_translate(v3(wxy(0.5f, 0.2f), 0.0f));
-	data.model = m4_multiply(data.model, m4_scale(v3(v2(512) * aspect_ratio, 1)));
-	data.color = make_rrr(1);
-	data.uv_min = v2(topleft.x / game->superku.texture_size.x, topleft.y / game->superku.texture_size.y);
-	data.uv_max = v2(bottomright.x / game->superku.texture_size.x, bottomright.y / game->superku.texture_size.y);
-	add_to_render_group(data, e_shader_flat, e_texture_superku, e_mesh_quad, 0);
-}
-
-func void draw_menu_background(s_m4 ortho, s_m4 view_inv)
-{
-	draw_ground(ortho, view_inv);
-
-	e_machine machine = e_machine_collector_1;
-	int frame_index = roundfi(game->render_time * 8) % g_machine_data[machine].frame_count;
-	s_v2i atlas_index = g_machine_data[machine].frame_arr[frame_index];
-	s_v2 size = v2(400);
-	draw_atlas(game->superku, wxy(0.1f, 0.15f), size, atlas_index, make_rrr(1), 0);
-	draw_atlas(game->superku, wxy(0.9f, 0.15f), size, atlas_index, make_rrr(1), 0);
-	do_basic_render_flush(ortho, 0, view_inv);
-}
-
-func void draw_ground(s_m4 ortho, s_m4 view_inv)
-{
-	s_instance_data data = zero;
-	data.model = m4_translate(v3(c_world_center, 0));
-	data.model = m4_multiply(data.model, m4_scale(v3(c_world_size, 1)));
-	data.color = make_rrr(1);
-	add_to_render_group(data, e_shader_ground, e_texture_white, e_mesh_quad, 0);
-	do_basic_render_flush(ortho, 0, view_inv);
 }

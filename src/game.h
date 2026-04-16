@@ -106,12 +106,6 @@ m_gl_funcs
 #define m_dll_export
 #endif
 
-enum e_game_state1
-{
-	e_game_state1_default,
-	e_game_state1_defeat,
-};
-
 struct s_lerpable
 {
 	float curr;
@@ -183,16 +177,6 @@ enum e_button_result
 	e_button_result_right_click,
 };
 
-enum e_place_result
-{
-	e_place_result_success,
-	e_place_result_currency,
-	e_place_result_requires_resource,
-	e_place_result_out_of_reach,
-	e_place_result_occupied,
-	e_place_result_chunk_locked,
-};
-
 struct s_entity
 {
 	int id;
@@ -225,11 +209,6 @@ struct s_entity
 	};
 };
 
-struct s_frame_data
-{
-	int lives_to_lose;
-};
-
 struct s_hold_input
 {
 	b8 left;
@@ -243,374 +222,13 @@ struct s_press_input
 	b8 q;
 };
 
-enum e_tile : u8
-{
-	e_tile_none,
-	e_tile_resource_1,
-	e_tile_resource_2,
-	e_tile_resource_3,
-	e_tile_count,
-};
-
-global constexpr s_v2i c_tile_atlas_index[] = {
-	zero,
-	{5, 6},
-	{3, 6},
-	{4, 6},
-};
-
-data_enum(e_machine,
-	s_machine_data
-	g_machine_data
-
-	none {
-
-	}
-
-	collector_1 {
-		.name = S("Collector Mk1"),
-		.requires_resource = true,
-		.size = 2,
-		.cost = 10,
-		.frame_count = 4,
-		.frame_arr = {
-			{0, 0}, {1, 0}, {2, 0}, {3, 0},
-		},
-	}
-
-	collector_2 {
-		.name = S("Collector Mk2"),
-		.requires_resource = true,
-		.size = 2,
-		.cost = 10 * 10,
-		.frame_count = 4,
-		.frame_arr = {
-			{0, 1}, {1, 1}, {2, 1}, {3, 1},
-		},
-	}
-
-	collector_3 {
-		.name = S("Collector Mk3"),
-		.requires_resource = true,
-		.size = 2,
-		.cost = 10 * 10 * 10,
-		.frame_count = 4,
-		.frame_arr = {
-			{0, 2}, {1, 2}, {2, 2}, {3, 2},
-		},
-	}
-
-	processor_1 {
-		.name = S("Processor Mk1"),
-		.size = 3,
-		.cost = 20,
-		.frame_count = 1,
-		.frame_arr = {
-			{5, 0},
-		},
-	}
-
-	processor_2 {
-		.name = S("Processor Mk2"),
-		.size = 3,
-		.cost = 20 * 5,
-		.frame_count = 1,
-		.frame_arr = {
-			{5, 1},
-		},
-	}
-
-	processor_3 {
-		.name = S("Processor Mk3"),
-		.size = 3,
-		.cost = 20 * 5 * 5,
-		.frame_count = 1,
-		.frame_arr = {
-			{5, 2},
-		},
-	}
-
-	research_1 {
-		.name = S("Researcher Mk1"),
-		.size = 3,
-		.cost = 30,
-		.frame_count = 8,
-		.frame_arr = {
-			{0, 3}, {1, 3}, {2, 3}, {3, 3}, {4, 3}, {5, 3}, {6, 3}, {7, 3},
-		},
-	}
-
-	research_2 {
-		.name = S("Researcher Mk2"),
-		.size = 3,
-		.cost = 30 * 5,
-		.frame_count = 8,
-		.frame_arr = {
-			{0, 4}, {1, 4}, {2, 4}, {3, 4}, {4, 4}, {5, 4}, {6, 4}, {7, 4},
-		},
-	}
-
-	research_3 {
-		.name = S("Researcher Mk3"),
-		.size = 3,
-		.cost = 30 * 5 * 5,
-		.frame_count = 8,
-		.frame_arr = {
-			{0, 5}, {1, 5}, {2, 5}, {3, 5}, {4, 5}, {5, 5}, {6, 5}, {7, 5},
-		},
-	}
-
-	pure_collector_1 {
-		.name = S("Pure collector Mk1"),
-		.size = 1,
-		.cost = 20,
-		.frame_count = 1,
-		.frame_arr = {
-			{7, 0},
-		},
-	}
-
-	pure_collector_2 {
-		.name = S("Pure collector Mk2"),
-		.size = 1,
-		.cost = 20 * 5,
-		.frame_count = 1,
-		.frame_arr = {
-			{7, 1},
-		},
-	}
-
-	pure_collector_3 {
-		.name = S("Pure collector Mk3"),
-		.size = 1,
-		.cost = 20 * 5 * 5,
-		.frame_count = 1,
-		.frame_arr = {
-			{7, 2},
-		},
-	}
-
-)
-
-struct s_machine_data
-{
-	s_len_str name;
-	b8 requires_resource;
-	int size;
-	int cost;
-	int frame_count;
-	s_v2i frame_arr[8];
-};
-
-enum e_stat
-{
-	e_stat_player_movement_speed,
-	e_stat_player_tile_reach,
-	e_stat_collector_speed,
-	e_stat_processor_speed,
-	e_stat_research_speed,
-	e_stat_count,
-};
-
-struct s_stats
-{
-	float arr[e_stat_count];
-};
-
-data_enum(e_research,
-	s_research_data
-	g_research_data
-
-	player_speed_1 {
-		.cost = 20,
-		.target_stat = maybe(e_stat_player_movement_speed),
-		.value = 20
-	}
-	player_speed_2 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_player_speed_1},
-		.cost = 200,
-		.target_stat = maybe(e_stat_player_movement_speed),
-		.value = 60,
-	}
-	player_speed_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_player_speed_2},
-		.cost = 1000,
-		.target_stat = maybe(e_stat_player_movement_speed),
-		.value = 100,
-	}
-	player_speed_4 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_player_speed_3},
-		.cost = 3000,
-		.target_stat = maybe(e_stat_player_movement_speed),
-		.value = 300,
-	}
-
-	player_tile_reach_1 {
-		.cost = 20,
-		.target_stat = maybe(e_stat_player_tile_reach),
-		.value = 2
-	}
-	player_tile_reach_2 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_player_tile_reach_1},
-		.cost = 200,
-		.target_stat = maybe(e_stat_player_tile_reach),
-		.value = 4,
-	}
-	player_tile_reach_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_player_tile_reach_2},
-		.cost = 1000,
-		.target_stat = maybe(e_stat_player_tile_reach),
-		.value = 10,
-	}
-	player_tile_reach_4 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_player_tile_reach_3},
-		.cost = 2000,
-		.target_stat = maybe(e_stat_player_tile_reach),
-		.value = 50,
-	}
-
-	pure_collector_1 {
-		.cost = 1000,
-	}
-
-	collector_2 {
-		.cost = 1000,
-	}
-
-	processor_2 {
-		.cost = 1000,
-	}
-
-	collector_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_collector_2},
-		.cost = 100000,
-	}
-
-	processor_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_processor_2},
-		.cost = 100000,
-	}
-
-	research_2 {
-		.cost = 2000,
-	}
-	research_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_research_2},
-		.cost = 200000,
-	}
-
-	pure_collector_2 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_pure_collector_1},
-		.cost = 1000,
-	}
-	pure_collector_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_pure_collector_2},
-		.cost = 10000,
-	}
-
-	collector_speed_1 {
-		.cost = 100,
-		.target_stat = maybe(e_stat_collector_speed),
-		.value = 25,
-	}
-	collector_speed_2 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_collector_speed_1},
-		.cost = 1000,
-		.target_stat = maybe(e_stat_collector_speed),
-		.value = 50,
-	}
-	collector_speed_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_collector_speed_2},
-		.cost = 20000,
-		.target_stat = maybe(e_stat_collector_speed),
-		.value = 100,
-	}
-
-	processor_speed_1 {
-		.cost = 100,
-		.target_stat = maybe(e_stat_processor_speed),
-		.value = 25,
-	}
-	processor_speed_2 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_processor_speed_1},
-		.cost = 1000,
-		.target_stat = maybe(e_stat_processor_speed),
-		.value = 50,
-	}
-	processor_speed_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_processor_speed_2},
-		.cost = 20000,
-		.target_stat = maybe(e_stat_processor_speed),
-		.value = 100,
-	}
-
-	research_speed_1 {
-		.cost = 100,
-		.target_stat = maybe(e_stat_research_speed),
-		.value = 25,
-	}
-	research_speed_2 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_research_speed_1},
-		.cost = 1000,
-		.target_stat = maybe(e_stat_research_speed),
-		.value = 50,
-	}
-	research_speed_3 {
-		.requirement_count = 1,
-		.requirement_arr = {e_research_research_speed_2},
-		.cost = 20000,
-		.target_stat = maybe(e_stat_research_speed),
-		.value = 100,
-	}
-
-	win {
-		.requirement_count = 2,
-		.requirement_arr = {e_research_collector_3, e_research_processor_3},
-		.cost = 2000000,
-	}
-)
-
-struct s_research_data
-{
-	int requirement_count;
-	e_research requirement_arr[4];
-	int cost;
-	s_maybe<e_stat> target_stat;
-	float value;
-};
-
 struct s_soft_game_data
 {
-	float collector_timer;
-	float pure_collector_timer;
-	float processor_timer;
-	float research_timer;
-
-	float last_step_sound_timestamp;
-
 	float last_non_spammy_timestamp;
 
-	s_maybe<float> open_inventory_timestamp;
 	s_hold_input hold_input;
 	s_press_input press_input;
 	int frames_to_freeze;
-	s_frame_data frame_data;
 	b8 tried_to_submit_score;
 	int update_count;
 	float shake_intensity;
@@ -623,36 +241,12 @@ struct s_soft_game_data
 	s_entity_manager<s_entity, c_max_entities> entity_arr;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;
-
-	int currency;
-	int raw_currency;
-
-	e_tile natural_terrain_arr[c_max_tiles][c_max_tiles];
-	e_machine machine_arr[c_max_tiles][c_max_tiles];
-	b8 purchased_chunk_arr[c_chunk_count][c_chunk_count];
-	s_maybe<e_machine> machine_to_place;
-	int machine_count_arr[e_machine_count];
-	s_maybe<e_research> current_research;
-	s_maybe<float> research_completed_timestamp_arr[e_research_count];
-	int spent_on_research_arr[e_research_count];
-	s_v2i shift_start;
-	float machine_animation_time;
-	float researcher_animation_time;
 };
 
 struct s_hard_game_data
 {
-	s_state state1;
 	int update_count;
 };
-
-// struct s_light
-// {
-// 	s_v2 pos;
-// 	float radius;
-// 	float smoothness;
-// 	s_v4 color;
-// };
 
 struct s_render_pass
 {
@@ -666,36 +260,21 @@ struct s_render_pass
 struct s_tutorial
 {
 	s_maybe<float> moved;
-	s_maybe<float> zoomed;
-	s_maybe<float> opened_inventory;
-	s_maybe<float> placed_collector;
-	s_maybe<float> placed_processor;
-	s_maybe<float> started_a_research;
-	s_maybe<float> placed_researcher;
-	s_maybe<float> deleted_machine;
-	s_maybe<float> used_q;
-	s_maybe<float> used_shift;
-	s_maybe<float> unlocked_chunk;
 	s_maybe<float> tutorial_end;
 };
 
 struct s_game
 {
 	s_tutorial tutorial;
-	b8 disable_walk_sound;
-	b8 fast_player_speed;
-	b8 player_super_reach;
-	b8 free_research;
-	b8 disable_damage_numbers;
-	b8 disable_gold_numbers;
 	b8 disable_lights;
-	float completed_dash_tutorial_timestamp;
 	s_lerpable music_speed;
 	s_lerpable music_volume;
 	int next_entity_id;
+
 	#if defined(m_debug)
 	b8 cheat_menu_enabled;
 	#endif
+
 	b8 reload_shaders;
 	b8 any_key_pressed;
 	s_linear_arena arena;
@@ -716,11 +295,8 @@ struct s_game
 	s_rng rng;
 	float speed;
 	s_input_name_state input_name_state;
-	int num_times_we_attacked_an_enemy;
-	int num_times_we_dashed;
 
 	s_atlas atlas;
-	s_atlas superku;
 
 	#if defined(m_winhttp)
 	HINTERNET session;
@@ -766,4 +342,4 @@ struct s_game
 
 
 #include "gen_meta/game.cpp.funcs"
-#include "gen_meta/game.h.globals"
+// #include "gen_meta/game.h.globals"

@@ -2,39 +2,6 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wbraced-scalar-init"
 #endif
-#if defined(m_debug)
-#define assert_e_machine(val) assert_e_machine_(val)
-
-static void assert_e_machine_(int val)
-{
-	assert(val >= e_machine_none && val < e_machine_count);
-}
-#else
-#define assert_e_machine(val)
-
-#endif
-#if defined(m_debug)
-#define assert_e_stat(val) assert_e_stat_(val)
-
-static void assert_e_stat_(int val)
-{
-	assert(val >= e_stat_player_movement_speed && val < e_stat_count);
-}
-#else
-#define assert_e_stat(val)
-
-#endif
-#if defined(m_debug)
-#define assert_e_research(val) assert_e_research_(val)
-
-static void assert_e_research_(int val)
-{
-	assert(val >= e_research_player_speed_1 && val < e_research_count);
-}
-#else
-#define assert_e_research(val)
-
-#endif
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
