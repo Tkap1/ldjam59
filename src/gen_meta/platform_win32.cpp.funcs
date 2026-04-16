@@ -1,0 +1,8 @@
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wbraced-scalar-init"
+#endif
+func void do_one_frame();
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

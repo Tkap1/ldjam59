@@ -1,0 +1,10 @@
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wbraced-scalar-init"
+#endif
+func void parse_leaderboard_json(s_json* json);
+func void load_or_create_leaderboard_id();
+func b8 get_leaderboard(int leaderboard_id);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

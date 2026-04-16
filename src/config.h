@@ -1,0 +1,55 @@
+
+
+global constexpr s_v2 c_world_size = {1366, 768};
+global constexpr s_v2 c_world_center = {c_world_size.x * 0.5f, c_world_size.y * 0.5f};
+global constexpr int c_max_vertices = 16384;
+global constexpr int c_max_faces = 8192;
+global constexpr s_v3 c_up_axis = {0, 0, 1};
+global constexpr int c_updates_per_second = 30;
+global constexpr f64 c_update_delay = 1.0 / c_updates_per_second;
+global constexpr float c_transition_time = 0.25f;
+global constexpr s_v2 c_game_area = {c_world_size.x * 0.75f, c_world_size.y * 1.0f};
+global constexpr float c_spawn_delay = 2;
+global constexpr float c_dash_duration = 0.5f;
+global constexpr float c_dash_cooldown = 3;
+global constexpr int c_max_lives = 10;
+global constexpr float c_enemy_health = 10;
+global constexpr float c_lightning_bolt_cooldown = 1;
+global constexpr float c_auto_attack_cooldown = 0.33333f;
+global constexpr float c_knockback = 400;
+global constexpr char* c_key_color_str = "$$26A5D9";
+global constexpr s_v4 c_key_color = {0.149020f, 0.647059f, 0.850980f, 1};
+global constexpr int c_invalid_index = -10000000;
+global constexpr s_v2 c_player_size_v = {32, 32};
+global constexpr int c_max_tiles = 1024;
+global constexpr int c_tile_size = 32;
+global constexpr s_v2 c_tile_size_v = {c_tile_size, c_tile_size};
+global constexpr int c_chunk_size = 48;
+global constexpr int c_chunk_count = c_max_tiles / c_chunk_size;
+global constexpr int c_starting_chunk = c_chunk_count / 2;
+global constexpr int c_biggest_machine_tile_size = 8;
+global constexpr float c_base_player_speed = 300;
+
+global constexpr float c_game_speed_arr[] = {
+	0.0f, 0.01f, 0.1f, 0.25f, 0.5f,
+	1,
+	2, 4, 8, 16
+};
+
+
+global constexpr int c_max_keys = 1024;
+global constexpr int c_left_button = c_max_keys - 2;
+global constexpr int c_right_button = c_max_keys - 1;
+global constexpr int c_left_shift = c_max_keys - 3;
+global constexpr int c_left_ctrl = c_max_keys - 4;
+
+global constexpr int c_max_leaderboard_entries = 2000;
+global constexpr int c_leaderboard_visible_entries_per_page = 10;
+
+global constexpr float c_pre_victory_duration = 2.0f;
+
+global constexpr int c_leaderboard_id = 31932;
+
+global constexpr s_len_str c_game_name = S("Collectorio");
+
+global constexpr int c_render_pass_count = 4;

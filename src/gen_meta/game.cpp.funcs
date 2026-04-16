@@ -1,0 +1,107 @@
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wbraced-scalar-init"
+#endif
+func void input();
+func void update();
+func void render(float interp_dt, float delta);
+func f64 get_seconds();
+func void on_gl_error(const char* expr, char* file, int line, int error);
+func void draw_rect(s_v2 pos, s_v2 size, s_v4 color, int render_pass_index);
+func void draw_rect_3d(s_v3 pos, s_v2 size, s_v4 color, int render_pass_index);
+func void draw_plane(s_v3 topleft, s_v3 topright, s_v3 bottomleft, s_v3 bottomright, s_v4 color, int render_pass_index);
+func void draw_rect_topleft(s_v2 pos, s_v2 size, s_v4 color, int render_pass_index);
+func void draw_texture_screen(s_v2 pos, s_v2 size, s_v4 color, e_texture texture_id, e_shader shader_id, s_v2 uv_min, s_v2 uv_max, s_draw_data draw_data, int render_pass_index);
+func void draw_mesh(e_mesh mesh_id, s_m4 model, s_v4 color, e_shader shader_id, int render_pass_index);
+func void draw_mesh(e_mesh mesh_id, s_v3 pos, s_v3 size, s_v4 color, e_shader shader_id, int render_pass_index);
+func void bind_framebuffer(u32 fbo);
+func void clear_framebuffer_color(u32 fbo, s_v4 color);
+func void clear_framebuffer_depth(u32 fbo);
+func void render_flush(s_render_flush_data data, b8 reset_render_count, int render_pass_index);
+template <typename t>
+func void add_to_render_group(t data, e_shader shader_id, e_texture texture_id, e_mesh mesh_id, int render_pass_index);
+func s_shader load_shader_from_file(char* file, s_linear_arena* arena);
+func e_button_result do_button(s_len_str text, s_v2 pos, b8 centered);
+func e_button_result do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, s_button_data optional);
+func b8 do_bool_button(s_len_str text, s_v2 pos, b8 centered, b8* out);
+func b8 do_bool_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 centered, b8* out);
+func b8 is_key_pressed(int key, b8 consume);
+func b8 is_key_down(int key);
+template <int n>
+func void cstr_into_builder(s_str_builder<n>* builder, char* str);
+template <int n>
+func b8 handle_string_input(s_input_str<n>* str, float time);
+func void handle_key_event(int key, b8 is_down, b8 is_repeat);
+func void do_leaderboard();
+func s_v2 get_rect_normal_of_closest_edge(s_v2 p, s_v2 center, s_v2 size);
+func b8 is_valid_2d_index(s_v2i index, int x_count, int y_count);
+func b8 check_action(float curr_time, float timestamp, float grace);
+func void draw_atlas(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 color, int render_pass_index);
+func void draw_atlas_ex(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data, int render_pass_index);
+func void draw_atlas_topleft(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 color, int render_pass_index);
+func void draw_circle(s_v2 pos, float radius, s_v4 color, int render_pass_index);
+func void draw_light(s_v2 pos, float radius, s_v4 color, float smoothness, int render_pass_index);
+func void do_screen_shake(float intensity);
+func void teleport_entity(s_entity* entity, s_v2 pos);
+func s_particle_emitter_a make_emitter_a();
+func s_particle_emitter_b make_emitter_b();
+func int add_emitter(s_entity emitter);
+func s_v2 gxy(float x, float y);
+func s_v2 gxy(float x);
+func s_container make_center_x_container(s_rect rect, s_v2 element_size, float padding, int element_count);
+func s_container make_forward_container(s_rect rect, s_v2 element_size, float padding);
+func s_container make_down_center_x_container(s_rect rect, s_v2 element_size, float padding);
+func s_container make_forward_align_right_container(s_rect rect, s_v2 element_size, float padding, float edge_padding, int element_count);
+func s_v2 container_get_pos_and_advance(s_container* c);
+func s_v2 topleft_to_bottomleft_mouse(s_v2 pos, s_v2 size, s_v2 mouse);
+func s_v2 prevent_offscreen(s_v2 pos, s_v2 size);
+func char* handle_plural(float x);
+template <typename t, typename F>
+func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena);
+func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha, int render_pass_index);
+func s_entity make_entity();
+func s_entity* get_entity(s_entity_ref ref);
+func float get_wanted_game_speed(float interp_dt);
+func s_active_sound* find_playing_sound(e_sound id);
+func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
+func float get_player_speed();
+func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv);
+func s_rect get_chunk_rect(s_v2i index);
+func b8 is_chunk_unlocked(int x, int y);
+func b8 is_chunk_unlocked_v2i(s_v2i index);
+func b8 are_any_adjacent_chunks_unlocked(s_v2i index);
+func void unlock_chunk_v2i(s_v2i index);
+func int get_chunk_unlock_cost(s_v2i index);
+func s_v2 get_chunk_center(s_v2i index);
+func b8 can_afford(int currency, int cost);
+func void add_currency(int currency);
+func void add_raw_currency(int currency);
+func s_rect get_camera_bounds(s_m4 view_inv);
+func s_v2i chunk_index_from_pos(s_v2 pos);
+func s_v2i tile_index_from_pos(s_v2 pos);
+func void place_machine(s_v2i tile_index, e_machine machine);
+func e_place_result can_we_place_machine(s_v2 player_pos, s_v2i chunk_index, s_v2i tile_index, e_machine machine, int currency);
+func s_v2i chunk_index_from_tile_index(s_v2i tile_index);
+func b8 is_machine_unlocked(e_machine machine);
+func b8 is_resource_tile(e_tile tile);
+func int get_machine_cost(e_machine machine);
+func void remove_machine(s_v2i tile_index);
+func void sell_machine(s_v2i tile_index, e_machine machine);
+func s_len_str get_research_tooltip(e_research research);
+func s_len_str get_machine_tooltip(e_machine machine);
+template <int n>
+func void builder_add_separator(s_str_builder<n>* builder);
+func void draw_selector_center(s_v2 pos, s_v2 size, float brightness, int render_pass_index);
+func int get_tile_distance_from_player_to_machine(s_v2 player_pos, s_v2i machine_tile_index, e_machine machine);
+func int get_player_tile_reach();
+func void add_non_spammy_message(s_v2 pos, s_len_str text);
+func s_len_str str_from_place_result(e_place_result place_result);
+func s_stats get_stats();
+func b8 are_research_requirements_satisfied(e_research research);
+func void draw_undiscovered_slot(s_v2 pos, s_v2 rect_size, float flash);
+func void draw_game_name();
+func void draw_menu_background(s_m4 ortho, s_m4 view_inv);
+func void draw_ground(s_m4 ortho, s_m4 view_inv);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

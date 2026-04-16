@@ -1,0 +1,77 @@
+automation game
+incremental game
+
+we could be collecting X by building machines? reaching certain amount of X
+	unlocks more space, which you can use to build more machines to get X faster
+X could also be consumed to improve machines??
+goal is to reach a certain amount of X?
+or maybe goal is to make a giga super epic collector machine that collects all of the things and you win
+no belts
+maybe bots? (factorio style)
+	speed upgrade
+	stack size upgrade
+
+we have a player
+	speed upgrade
+	building reach upgrade
+
+to collect, we place "collectors"? on top of whatever resource things
+	there are different tiers of resource that require higher tier collectors?
+
+a bunch of currencies that upgrade after you reach a certain amount (like WoW gold)
+	there are multiple tiers of resource that give higher tier resources. they require higher tier collector?
+	collectors don't mine faster, they just allow you to mine higher tier
+
+maybe limit bots? but be able to upgrade your max? (for performance?)
+
+gameplay
+	you start with some currency
+	find/move to resource patches
+	build a few collectors on the patches
+	bots will fly from the main building to the collectors and bring the currency home
+	player standing near resource patches also collects stuff?
+
+do all buildings have the same size or not?
+	yes = easier to program
+	no = cooler
+
+problem:
+	we never build (we cant) anything on empty space, only resource patches
+		we could be allowed to build a "hub", which is a place where bots can deposit currency isntead of having to go back to the main hub
+		resources give you "raw" currency, which has to be turned into the actual currency, so that could have with some kind of machine ("processor"? it probably also have tiers)
+
+could have a machine that collects without the need for resources, but it does so way slower
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+polish:
+	particles
+	fancy text on win research?
+	animate gaining resource
+	juice it up so it at least feels good even though the gameplay loop is trash
+	show research %
+	research needs icons badly
+
+balance prices
+mention ctrl + r
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+Collect energy through machinery
+
+Research new technologies
+
+Become THE COLLECTOR
+
+Reach the TOP of the leaderboard
+
+# Development
+Made in C++ without an engine in about 20~ hours
+
+I was busy doing more important things (like playing DotA) so I didn't have time to polish as much as I would like to
+
+Programming, design, most sounds, and programmer art by Tkap
+
+Good art by Superku
+
+Music by TeknoAXE
