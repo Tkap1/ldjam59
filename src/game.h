@@ -136,17 +136,6 @@ struct s_key_state
 	int half_transition_count;
 };
 
-template <int n>
-struct s_input_str
-{
-	b8 visual_pos_initialized;
-	s_v2 cursor_visual_pos;
-	float last_edit_time;
-	float last_action_time;
-	s_maybe<int> cursor;
-	s_str_builder<n> str;
-};
-
 struct s_input_name_state
 {
 	s_input_str<16> name;
