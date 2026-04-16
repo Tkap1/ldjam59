@@ -722,34 +722,6 @@ func void render(float interp_dt, float delta)
 
 		b8 do_game_ui = true;
 
-		s_v2i topleft_index;
-		s_v2i bottomright_index;
-		{
-			int size = c_chunk_size * c_tile_size;
-			s_v2 topleft = v2_multiply_m4(v2(0, 0), view_inv);
-			s_v2 bottomright = v2_multiply_m4(c_world_size, view_inv);
-			topleft_index = v2i(
-				floorfi(topleft.x / size),
-				floorfi(topleft.y / size)
-			);
-			topleft_index.x = at_least(0, topleft_index.x - 1);
-			topleft_index.y = at_least(0, topleft_index.y - 1);
-
-			bottomright_index = v2i(
-				ceilfi(bottomright.x / size),
-				ceilfi(bottomright.y / size)
-			);
-			bottomright_index.x = at_most(c_chunk_count - 1, bottomright_index.x + 1);
-			bottomright_index.y = at_most(c_chunk_count - 1, bottomright_index.y + 1);
-		}
-
-		do_basic_render_flush(view_projection, 0, view_inv);
-		do_basic_render_flush(view_projection, 1, view_inv);
-		do_basic_render_flush(view_projection, 2, view_inv);
-
-
-		do_basic_render_flush(view_projection, 0, view_inv);
-
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		if(!game->disable_lights) {
 			{
