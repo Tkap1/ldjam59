@@ -1,6 +1,10 @@
 
 #include "gen_meta/engine.h.enums"
 
+global constexpr s_v3 c_x_axis = {1, 0, 0};
+global constexpr s_v3 c_y_axis = {0, 1, 0};
+global constexpr s_v3 c_z_axis = {0, 0, 1};
+
 enum e_mesh
 {
 	e_mesh_quad,
