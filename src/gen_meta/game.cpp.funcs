@@ -19,8 +19,6 @@ func void teleport_entity(s_entity* entity, s_v2 pos);
 func s_particle_emitter_a make_emitter_a();
 func s_particle_emitter_b make_emitter_b();
 func int add_emitter(s_entity emitter);
-func s_v2 gxy(float x, float y);
-func s_v2 gxy(float x);
 func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha, int render_pass_index);
 func s_entity make_entity();
 func s_entity* get_entity(s_entity_ref ref);

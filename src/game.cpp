@@ -67,7 +67,6 @@
 #define m_gl_single_channel GL_RED
 #endif // __EMSCRIPTEN__
 
-
 #if defined(m_debug)
 #define gl(...) __VA_ARGS__; {int error = glGetError(); if(error != 0) { on_gl_error(#__VA_ARGS__, __FILE__, __LINE__, error); }}
 #else // m_debug
@@ -82,7 +81,6 @@
 #include "engine.h"
 #include "game.h"
 #include "shader_shared.h"
-
 
 #if defined(__EMSCRIPTEN__)
 global constexpr b8 c_on_web = true;
@@ -272,6 +270,7 @@ func void input()
 
 			case SDL_KEYDOWN:
 			case SDL_KEYUP: {
+				b8 is_repeat = event.key.repeat != 0;
 				int key = event.key.keysym.sym;
 				SDL_Scancode scancode = event.key.keysym.scancode;
 				if(key == SDLK_LSHIFT) {
@@ -288,7 +287,7 @@ func void input()
 					game->input_arr[key].half_transition_count += 1;
 				}
 				if(event.type == SDL_KEYDOWN) {
-					if(key == SDLK_r && event.key.repeat == 0) {
+					if(key == SDLK_r && !is_repeat) {
 						if(event.key.keysym.mod & KMOD_LCTRL) {
 							game->do_hard_reset = true;
 						}
@@ -296,18 +295,20 @@ func void input()
 							game->do_hard_reset = true;
 						}
 					}
-					else if(key == SDLK_SPACE && event.key.repeat == 0) {
+					else if(key == SDLK_SPACE && !is_repeat) {
 					}
-					else if(scancode == SDL_SCANCODE_A) {
+					else if(scancode == SDL_SCANCODE_LEFT && !is_repeat) {
 					}
-					else if(scancode == SDL_SCANCODE_S && event.key.repeat == 0) {
+					else if(scancode == SDL_SCANCODE_RIGHT && !is_repeat) {
 					}
-					else if(scancode == SDL_SCANCODE_E && event.key.repeat == 0) {
+					else if(scancode == SDL_SCANCODE_UP && !is_repeat) {
 					}
-					else if(scancode == SDL_SCANCODE_Q && event.key.repeat == 0) {
+					else if(scancode == SDL_SCANCODE_DOWN && !is_repeat) {
+					}
+					else if(scancode == SDL_SCANCODE_Q && !is_repeat) {
 						soft_data->press_input.q = true;
 					}
-					else if((key == SDLK_ESCAPE && event.key.repeat == 0) || (key == SDLK_o && event.key.repeat == 0) || (key == SDLK_p && event.key.repeat == 0)) {
+					else if((key == SDLK_ESCAPE && !is_repeat) || (key == SDLK_o && !is_repeat) || (key == SDLK_p && !is_repeat)) {
 						if(state0 == e_game_state0_play) {
 							add_state(&game->state0, e_game_state0_pause);
 						}
@@ -316,9 +317,9 @@ func void input()
 						}
 					}
 					#if defined(m_debug)
-					else if(key == SDLK_s && event.key.repeat == 0 && event.key.keysym.mod & KMOD_LCTRL) {
+					else if(key == SDLK_s && !is_repeat && event.key.keysym.mod & KMOD_LCTRL) {
 					}
-					else if(key == SDLK_l && event.key.repeat == 0 && event.key.keysym.mod & KMOD_LCTRL) {
+					else if(key == SDLK_l && !is_repeat && event.key.keysym.mod & KMOD_LCTRL) {
 					}
 					else if(key == SDLK_KP_PLUS) {
 						game->speed_index = circular_index(game->speed_index + 1, array_count(c_game_speed_arr));
@@ -331,9 +332,9 @@ func void input()
 					else if(key == SDLK_F1) {
 						game->cheat_menu_enabled = !game->cheat_menu_enabled;
 					}
-					else if(key == SDLK_j && event.key.repeat == 0) {
+					else if(key == SDLK_j && !is_repeat) {
 					}
-					else if(key == SDLK_h && event.key.repeat == 0) {
+					else if(key == SDLK_h && !is_repeat) {
 					}
 					#endif // m_debug
 
@@ -403,8 +404,8 @@ func void update()
 
 	if(game->do_hard_reset) {
 		game->do_hard_reset = false;
+		game->do_soft_reset = true;
 		memset(hard_data, 0, sizeof(*hard_data));
-		memset(soft_data, 0, sizeof(*soft_data));
 		game->update_time = 0;
 		reset_linear_arena(&game->arena);
 		for_enum(type_i, e_entity) {
@@ -414,6 +415,8 @@ func void update()
 		game->music_speed.target = 1;
 	}
 	if(game->do_soft_reset) {
+		game->do_soft_reset = false;
+		memset(soft_data, 0, sizeof(*soft_data));
 	}
 
 	b8 should_do_game = false;
@@ -722,6 +725,7 @@ func void render(float interp_dt, float delta)
 
 		b8 do_game_ui = true;
 
+
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		if(!game->disable_lights) {
 			{
@@ -763,46 +767,6 @@ func void render(float interp_dt, float delta)
 			do_basic_render_flush(view_projection, 0, view_inv);
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw fct end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tutorial start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		{
-			breakable_block {
-				constexpr float font_size = 48;
-				constexpr float advance = font_size + 4;
-				float time_passed = 0;
-				if(game->tutorial.moved.valid) {
-					time_passed = game->render_time - game->tutorial.moved.value;
-				}
-				if(time_passed <= 1.0f) {
-					s_v2 pos = wxy(0.4f, 0.9f);
-					float alpha = 1.0f - powf(time_passed, 2.0f);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_W), pos + v2(advance * 0, sin_range(-10, 10, game->render_time * 4 + 0)), v2(font_size), alpha, 0);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_A), pos + v2(advance * 1, sin_range(-10, 10, game->render_time * 4 + 1)), v2(font_size), alpha, 0);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_S), pos + v2(advance * 2, sin_range(-10, 10, game->render_time * 4 + 2)), v2(font_size), alpha, 0);
-					draw_keycap(scancode_to_char(SDL_SCANCODE_D), pos + v2(advance * 3, sin_range(-10, 10, game->render_time * 4 + 3)), v2(font_size), alpha, 0);
-					draw_text(S("to move"), pos + v2(advance * 4, 0), font_size, make_ra(1, alpha), false, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-
-				set_maybe_if_invalid(&game->tutorial.tutorial_end, game->render_time);
-
-				time_passed = 0;
-				if(game->tutorial.tutorial_end.valid) {
-					time_passed = game->render_time - game->tutorial.tutorial_end.value;
-				}
-				if(time_passed <= 10.0f) {
-					s_v2 pos = wxy(0.5f, 0.9f);
-					float alpha = ease_in_expo_advanced(time_passed, 0, 10, 1, 0);
-					draw_text(S("Your goal is to research a specific technology\n                Good luck!"), pos + v2(advance * 1, sin_range(-10, 10, game->render_time * 4 + 0)), font_size, make_ra(1, alpha), true, &game->font, zero, 0);
-					break;
-				}
-				// ------------------------------------------------------------------------
-			}
-			do_basic_render_flush(ortho, 0, view_inv);
-			do_basic_render_flush(ortho, 1, view_inv);
-		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tutorial end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		// {
 		// 	s_render_flush_data data = make_render_flush_data(zero, zero);
@@ -1168,18 +1132,6 @@ func int add_emitter(s_entity emitter)
 	emitter.emitter_b.last_emit_timestamp = game->render_time - 1.0f / emitter.emitter_b.particles_per_second;
 	int index = entity_manager_add_if_not_full(&soft_data->entity_arr, e_entity_emitter, emitter);
 	return index;
-}
-
-func s_v2 gxy(float x, float y)
-{
-	s_v2 result = {x * c_game_area.x, y * c_game_area.y};
-	return result;
-}
-
-func s_v2 gxy(float x)
-{
-	s_v2 result = gxy(x, x);
-	return result;
 }
 
 func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha, int render_pass_index)
