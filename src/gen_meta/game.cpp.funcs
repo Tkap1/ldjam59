@@ -25,13 +25,7 @@ func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha, int render_pass_
 func s_entity make_entity();
 func s_entity* get_entity(s_entity_ref ref);
 func float get_wanted_game_speed(float interp_dt);
-func s_active_sound* find_playing_sound(e_sound id);
-func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
-func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv);
-func s_rect get_chunk_rect(s_v2i index);
-func s_v2 get_chunk_center(s_v2i index);
 func s_rect get_camera_bounds(s_m4 view_inv);
-func s_v2i chunk_index_from_pos(s_v2 pos);
 func s_v2i tile_index_from_pos(s_v2 pos);
 template <int n>
 func void builder_add_separator(s_str_builder<n>* builder);

@@ -115,8 +115,6 @@ m_dll_export void init(s_platform_data* platform_data)
 	game->reload_shaders = true;
 	game->speed = 0;
 	game->music_speed = {1, 1};
-	game->soft_data.zoom = 1;
-	game->soft_data.wanted_zoom = 1;
 
 	if(!c_on_web) {
 		game->disable_music = true;
@@ -381,11 +379,11 @@ func void input()
 			} break;
 
 			case SDL_MOUSEWHEEL: {
-				float x = range_lerp((float)event.wheel.y, -1, 1, 0.9f, 1.1f);
-				if(state0 == e_game_state0_play) {
-					soft_data->wanted_zoom *= x;
-					soft_data->wanted_zoom = clamp(soft_data->wanted_zoom, 0.125f, 4.0f);
-				}
+				// float x = range_lerp((float)event.wheel.y, -1, 1, 0.9f, 1.1f);
+				// if(state0 == e_game_state0_play) {
+				// 	soft_data->wanted_zoom *= x;
+				// 	soft_data->wanted_zoom = clamp(soft_data->wanted_zoom, 0.125f, 4.0f);
+				// }
 			} break;
 		}
 	}
@@ -412,9 +410,6 @@ func void update()
 		for_enum(type_i, e_entity) {
 			entity_manager_reset(entity_arr, type_i);
 		}
-		soft_data->zoom = 1;
-		soft_data->wanted_zoom = 1;
-
 
 		game->music_speed.target = 1;
 	}
@@ -475,18 +470,9 @@ func void render(float interp_dt, float delta)
 	s_entity player = entity_arr->data[c_first_index[e_entity_player]];
 	s_v2 player_pos = lerp_v2(player.prev_pos, player.pos, interp_dt);
 
-	soft_data->zoom = lerp_snap(soft_data->zoom, soft_data->wanted_zoom, delta * 10, 0.001f);
-
 	s_m4 ortho = make_orthographic(0, c_world_size.x, c_world_size.y, 0, -100, 100);
-	s_m4 view;
-	s_m4 view_inv;
-	{
-		float cam_x = (player_pos.x * soft_data->zoom) - c_world_center.x;
-		float cam_y = (player_pos.y * soft_data->zoom) - c_world_center.y;
-		view = m4_translate(v3(-cam_x, -cam_y, 0.0f));
-		view = view * m4_scale(v3(soft_data->zoom, soft_data->zoom, 1.0f));
-		view_inv = m4_inverse(view);
-	}
+	s_m4 view = m4_identity();
+	s_m4 view_inv = view;
 	s_m4 view_projection = m4_multiply(ortho, view);
 
 	s_v2 world_mouse = v2_multiply_m4(g_mouse, view_inv);
@@ -927,13 +913,6 @@ func void render(float interp_dt, float delta)
 			};
 			s_v2 size = v2(320, 48);
 			s_container container = make_down_center_x_container(rect, size, 10);
-
-			{
-				s_len_str text = format_text("Reset zoom");
-				if(do_button_ex(text, container_get_pos_and_advance(&container), size, false, zero) == e_button_result_left_click) {
-					soft_data->zoom = 1;
-				}
-			}
 
 			do_basic_render_flush(ortho, 0, view_inv);
 		}

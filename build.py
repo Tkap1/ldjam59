@@ -39,6 +39,7 @@ def main():
 		if success:
 			shutil.copyfile("build/main.dll", "main.dll")
 		else:
+			play_fail_sound()
 			compile_platform = False
 		end_time("Compile game dll:")
 
@@ -47,6 +48,8 @@ def main():
 		success = compile_exe(["../src/platform_win32.cpp"], "main", compiler_args, linker_args)
 		if success:
 			shutil.copyfile("build/main.exe", "main.exe")
+		else:
+			play_fail_sound()
 		end_time("Compile platform:")
 
 	if compile_full:
@@ -54,6 +57,8 @@ def main():
 		success = compile_exe(["../src/platform_win32.cpp", "../src/game.cpp"], "main", compiler_args, linker_args)
 		if success:
 			shutil.copyfile("build/main.exe", "main.exe")
+		else:
+			play_fail_sound()
 		end_time("Full build:")
 
 	end_time("Total time:")
@@ -175,6 +180,10 @@ def get_common_linker_args(debug_mode):
 	return result
 #------------------------------------------------------------------------------------------------------------------------------------
 
+def play_fail_sound():
+	run_no_wait("cmdmp3 build_fail.mp3", output=False);
+#------------------------------------------------------------------------------------------------------------------------------------
+
 def start_time(text = None):
 	if text:
 		print(text)
@@ -185,7 +194,7 @@ def end_time(text):
 	before = g_time.pop()
 	now = time.time()
 	passed = (now - before)
-	print(f"{text} {passed}s")
+	print(f"{text} {passed} seconds")
 #------------------------------------------------------------------------------------------------------------------------------------
 
 def run_and_wait(cmd, print_output):

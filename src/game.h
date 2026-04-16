@@ -106,12 +106,6 @@ m_gl_funcs
 #define m_dll_export
 #endif
 
-struct s_lerpable
-{
-	float curr;
-	float target;
-};
-
 enum e_game_state0
 {
 	e_game_state0_main_menu,
@@ -222,10 +216,7 @@ struct s_soft_game_data
 	int update_count;
 	float shake_intensity;
 	float start_screen_shake_timestamp;
-	float start_restart_timestamp;
 	s_list<s_particle, 65536> particle_arr;
-	float wanted_zoom;
-	float zoom;
 
 	s_entity_manager<s_entity, c_max_entities> entity_arr;
 

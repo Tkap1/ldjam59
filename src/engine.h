@@ -318,6 +318,12 @@ struct s_shader
 	u32 id;
 };
 
+struct s_lerpable
+{
+	float curr;
+	float target;
+};
+
 struct s_timer
 {
 	float cooldown;

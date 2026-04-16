@@ -97,6 +97,9 @@ func s_v2 prevent_offscreen(s_v2 pos, s_v2 size);
 func char* handle_plural(float x);
 template <typename t, typename F>
 func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena);
+func s_active_sound* find_playing_sound(e_sound id);
+func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
+func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
