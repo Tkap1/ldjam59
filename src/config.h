@@ -1,6 +1,7 @@
 
 
 global constexpr s_v2 c_world_size = {1366, 768};
+global constexpr float c_aspect_ratio = c_world_size.x / c_world_size.y;
 global constexpr int c_num_tiles = 20;
 global constexpr int c_tile_size = 32;
 global constexpr s_v2 c_tile_size_v = {c_tile_size, c_tile_size};

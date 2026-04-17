@@ -22,14 +22,15 @@ shared_var vec4 v_mix_color;
 #if defined(m_vertex)
 void main()
 {
-	vec3 vertex = vertex_pos;
-
 	float scale_x = length(vec3(instance_model[0]));
 	float scale_y = length(vec3(instance_model[1]));
-	vec3 camera_right = normalize(vec3(view[0].x,view[1].x,view[2].x));
-	vec3 camera_up = normalize(vec3(view[0].y,view[1].y,view[2].y));
-	vec3 vertex2 = (camera_right*vertex.x*scale_x)-(camera_up*vertex.y*scale_y);
-	vec3 world_pos = vec3(instance_model[3]) + vertex2;
+
+	vec3 cam_right = vec3(view[0][0], view[1][0], view[2][0]);
+	vec3 up = vec3(0.0, 1.0, 0.0);
+
+	vec3 world_pos = vec3(instance_model[3]);
+
+	world_pos += cam_right * vertex_pos.x * scale_x + up * vertex_pos.y * scale_y;
 
 	gl_Position = projection * view * vec4(world_pos, 1.0);
 	v_color = vertex_color * instance_color;

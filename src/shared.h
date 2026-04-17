@@ -26,19 +26,6 @@ enum e_sound
 {
 	e_sound_click,
 	e_sound_key,
-	e_sound_enemy_death,
-	e_sound_enemy_death2,
-	e_sound_lose_life,
-	e_sound_land,
-	e_sound_win,
-	e_sound_super_speed,
-	e_sound_dash,
-	e_sound_miss_attack,
-	e_sound_punch,
-	e_sound_lightning_bolt,
-	e_sound_upgrade,
-	e_sound_music,
-	e_sound_step,
 	e_sound_count,
 };
 
@@ -51,19 +38,6 @@ struct s_sound_data
 global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/click.wav", 0.2f},
 	{"assets/key.wav", 0.2f},
-	{"assets/enemy_death.wav", 0.15f},
-	{"assets/enemy_death2.wav", 0.15f},
-	{"assets/lose_life.wav", 0.2f},
-	{"assets/land.wav", 1.0f},
-	{"assets/win.wav", 1.0f},
-	{"assets/super_speed.wav", 1.0f},
-	{"assets/dash.wav", 0.1f},
-	{"assets/miss_attack.wav", 0.1f},
-	{"assets/punch.wav", 0.2f},
-	{"assets/lightning_bolt.wav", 0.05f},
-	{"assets/upgrade.wav", 0.2f},
-	{"assets/music.wav", 0.1f},
-	{"assets/step.wav", 0.08f},
 };
 
 struct s_active_sound

@@ -55,7 +55,6 @@ enum e_texture
 	e_texture_font,
 	e_texture_light,
 	e_texture_atlas,
-	e_texture_superku,
 	e_texture_count
 };
 
@@ -65,7 +64,6 @@ global constexpr char* c_texture_path_arr[e_texture_count] = {
 	"",
 	"",
 	"assets/atlas.png",
-	"assets/superku.png",
 };
 
 

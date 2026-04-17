@@ -1176,19 +1176,19 @@ func void pre_render(float delta)
 	bind_framebuffer(0);
 	clear_framebuffer_depth(0);
 
-	{
-		if(game->disable_music) {
-			game->music_volume.target = 0;
-		}
-		else {
-			game->music_volume.target = 1;
-		}
-		do_lerpable_snap(&game->music_volume, delta * 5, 0.01f);
-		s_active_sound* music = find_playing_sound(e_sound_music);
-		if(music) {
-			music->data.volume = game->music_volume.curr;
-		}
-	}
+	// {
+	// 	if(game->disable_music) {
+	// 		game->music_volume.target = 0;
+	// 	}
+	// 	else {
+	// 		game->music_volume.target = 1;
+	// 	}
+	// 	do_lerpable_snap(&game->music_volume, delta * 5, 0.01f);
+	// 	s_active_sound* music = find_playing_sound(e_sound_music);
+	// 	if(music) {
+	// 		music->data.volume = game->music_volume.curr;
+	// 	}
+	// }
 
 }
 
@@ -1352,9 +1352,6 @@ func void engine_init(s_platform_data* platform_data)
 		char* path = c_texture_path_arr[i];
 		if(strlen(path) > 0) {
 			u32 filter = GL_NEAREST;
-			if(i == e_texture_superku) {
-				filter = GL_LINEAR;
-			}
 			game->texture_arr[i] = load_texture_from_file(path, filter);
 		}
 	}

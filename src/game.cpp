@@ -133,7 +133,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	load_or_create_leaderboard_id();
 	#endif
 
-	play_sound(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
+	// play_sound(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
 }
 
 m_dll_export void init_after_recompile(s_platform_data* platform_data)
@@ -727,6 +727,7 @@ func void render(float interp_dt, float delta)
 
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		#if 0
 		if(!game->disable_lights) {
 			{
 				clear_framebuffer_color(game->light_fbo.id, make_rrr(0.66f));
@@ -747,6 +748,7 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true, 0);
 			}
 		}
+		#endif
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		lights end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw fct start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -767,25 +769,6 @@ func void render(float interp_dt, float delta)
 			do_basic_render_flush(view_projection, 0, view_inv);
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw fct end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-		// {
-		// 	s_render_flush_data data = make_render_flush_data(zero, zero);
-		// 	data.projection = ortho;
-		// 	data.blend_mode = e_blend_mode_normal;
-		// 	data.depth_mode = e_depth_mode_no_read_no_write;
-		// 	render_flush(data, true, 0);
-		// }
-
-
-		// update_particles(delta, true, 0);
-
-		// {
-		// 	s_render_flush_data data = make_render_flush_data(zero, zero);
-		// 	data.projection = ortho;
-		// 	data.blend_mode = e_blend_mode_additive;
-		// 	data.depth_mode = e_depth_mode_no_read_no_write;
-		// 	render_flush(data, true, 0);
-		// }
 
 		if(do_game_ui) {
 
@@ -899,13 +882,13 @@ func void render(float interp_dt, float delta)
 		}
 	}
 
-	{
-		do_lerpable_snap(&game->music_speed, delta * 2.0f, 0.01f);
-		s_active_sound* music = find_playing_sound(e_sound_music);
-		if(music) {
-			music->data.speed = game->music_speed.curr;
-		}
-	}
+	// {
+	// 	do_lerpable_snap(&game->music_speed, delta * 2.0f, 0.01f);
+	// 	s_active_sound* music = find_playing_sound(e_sound_music);
+	// 	if(music) {
+	// 		music->data.speed = game->music_speed.curr;
+	// 	}
+	// }
 
 	SDL_GL_SwapWindow(g_platform_data->window);
 

@@ -48,6 +48,8 @@ int main()
 			assert(strlen(path) > 0);
 			if(strcmp(path, "main.dll") == 0) {
 				load_dll = true;
+				// @Note(tkap, 16/04/2026): Try to prevent some weird crash we get when hot reloading
+				Sleep(100);
 			}
 			g_platform_data.hot_read_index[0] += 1;
 		}
