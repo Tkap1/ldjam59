@@ -44,6 +44,7 @@ func void reset_player_pos(s_entity* player);
 func s_entity* get_player();
 func s_entity* get_wall_at_tile(s_v2i index);
 func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you);
+func void jump_forward(s_entity* player);
 func b8 check_for_win(s_v3 pos);
 func b8 will_win_soon();
 func b8 will_lose_soon();

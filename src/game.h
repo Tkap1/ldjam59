@@ -190,6 +190,11 @@ struct s_entity
 			s_maybe<float> is_jumping;
 		};
 
+		// @Note(tkap, 04/10/2025): Wall
+		struct {
+			b8 is_fence;
+		};
+
 		// @Note(tkap, 31/07/2025): Emitter
 		struct {
 			s_particle_emitter_a emitter_a;
@@ -296,6 +301,7 @@ enum e_editor_entity
 {
 	e_editor_entity_wall,
 	e_editor_entity_end,
+	e_editor_entity_fence,
 };
 
 struct s_editor

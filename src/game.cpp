@@ -291,7 +291,7 @@ func void input()
 				if(event.type == SDL_KEYDOWN) {
 
 					int entity_type_arr[9] = {
-						e_editor_entity_wall, e_editor_entity_end, -1,
+						e_editor_entity_wall, e_editor_entity_end, e_editor_entity_fence,
 						-1, -1, -1,
 						-1, -1, -1,
 					};
@@ -591,8 +591,7 @@ func void update()
 					// s_entity* wall = get_wall_at_tile(player_tile);
 					soft_data->want_to_jump_timestamp = zero;
 					advance_next_action_time = true;
-					move_forward(player, true);
-					move_forward(player, true);
+					jump_forward(player);
 					player->is_jumping = maybe(soft_update_time);
 					// if(!wall) {
 					// 	s_v3 target_pos = player->target_pos;
@@ -972,6 +971,10 @@ func void render(float interp_dt, float delta)
 							set_editor_entity(mouse_tile, e_entity_wall, 0);
 						};
 
+						xcase e_editor_entity_fence: {
+							set_editor_entity(mouse_tile, e_entity_wall, 1);
+						};
+
 						xcase e_editor_entity_end: {
 							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_end);
 						}
@@ -1037,9 +1040,15 @@ func void render(float interp_dt, float delta)
 						continue;
 					}
 					s_entity entity = entity_arr->data[i];
+					s_v3 size = v3(1, 1, 1);
+					s_v4 color = make_rrr(1);
+					if(entity.is_fence) {
+						size.y *= 0.5f;
+						color = make_rgb(1, 0.8f, 0.8f);
+					}
 					s_v3 pos = entity.pos;
-					pos.y += 0.5f;
-					draw_mesh(e_mesh_cube, pos, v3(1, 1, 1), make_rrr(1), e_shader_mesh, 0);
+					pos.y += size.y * 0.5f;
+					draw_mesh(e_mesh_cube, pos, size, color, e_shader_mesh, 0);
 				}
 
 				for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
@@ -1659,6 +1668,9 @@ func void load_map(int index)
 				if(editor_entity.type == e_entity_pickup) {
 					entity.pickup_type = (e_pickup)editor_entity.sub_type;
 				}
+				else if(editor_entity.type == e_entity_wall) {
+					entity.is_fence = editor_entity.sub_type == 1;
+				}
 				teleport_entity(&entity, v3(x, 0.0f, -y));
 				entity_manager_add(&game->soft_data.entity_arr, editor_entity.type, entity);
 			}
@@ -1689,7 +1701,12 @@ func void draw_entity_2d(s_editor_entity entity, int x, int y)
 	s_v2 base_pos = v2(x, y) * c_tile_size;
 	switch(entity.type) {
 		xcase e_entity_wall: {
-			draw_rect_topleft(base_pos, c_tile_size_v, make_rgb(1, 0, 1), 0);
+			if(entity.sub_type == 0) {
+				draw_atlas_topleft(game->atlas, base_pos, c_tile_size_v, v2i(3, 0), make_rrr(1), 0);
+			}
+			else {
+				draw_atlas_topleft(game->atlas, base_pos, c_tile_size_v, v2i(4, 0), make_rrr(1), 0);
+			}
 		}
 		xcase e_entity_pickup: {
 			s_v2 pos = base_pos;
@@ -1778,6 +1795,37 @@ func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you)
 	if(does_walking_into_wall_kill_you && wall) {
 		float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
 		game->soft_data.lose_timestamp = maybe(soft_update_time);
+	}
+}
+
+func void jump_forward(s_entity* player)
+{
+	s_v3 target_pos = player->target_pos;
+	for(int i = 0; i < 2; i += 1) {
+		target_pos.z -= 1;
+		s_entity* wall = null;
+		{
+			s_v2i player_tile = tile_index_from_3d(target_pos);
+			wall = get_wall_at_tile(player_tile);
+		}
+
+		b8 can_jump_over = true;
+		if(wall) {
+			if(wall->is_fence) {
+				can_jump_over = i == 0;
+			}
+			else {
+				can_jump_over = false;
+			}
+		}
+
+		if(can_jump_over) {
+			player->target_pos = target_pos;
+		}
+		else {
+			float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
+			game->soft_data.lose_timestamp = maybe(soft_update_time);
+		}
 	}
 }
 
