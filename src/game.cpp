@@ -323,7 +323,7 @@ func void input()
 							game->do_hard_reset = true;
 						}
 						else {
-							game->do_hard_reset = true;
+							game->do_soft_reset = true;
 						}
 					}
 					else if(scancode == SDL_SCANCODE_SPACE && !is_repeat) {
@@ -532,25 +532,65 @@ func void update()
 				can_act = true;
 			}
 
-			if(check_action_maybe(soft_update_time, soft_data->want_to_move_timestamp, 0.0f)) {
-				if(!can_act) {
-					soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
-				}
-			}
+			b8 wanted_to_perform_action = false;
 
 			if(can_act) {
 				soft_data->draw_signal = true;
-				if(check_action_maybe(soft_update_time, soft_data->want_to_move_timestamp, 0.0f)) {
+			}
+			else {
+				soft_data->draw_signal = false;
+			}
+
+			b8 advance_next_action_time = false;
+
+			if(check_action_maybe(soft_update_time, soft_data->want_to_move_timestamp, 0.0f)) {
+				wanted_to_perform_action = true;
+				if(can_act) {
 					soft_data->want_to_move_timestamp = zero;
 					s_v3 target_pos = player->target_pos;
 					target_pos.z -= 1;
 					player->target_pos = target_pos;
-					float diff = soft_update_time - soft_data->next_action_time;
-					soft_data->next_action_time += c_action_interval + diff;
+					advance_next_action_time = true;
 				}
 			}
-			else {
-				soft_data->draw_signal = false;
+
+			if(check_action_maybe(soft_update_time, soft_data->want_to_move_left_timestamp, 0.0f)) {
+				wanted_to_perform_action = true;
+				if(can_act) {
+					s_v2i player_tile = tile_index_from_3d(player->target_pos - v3(1, 0, 0));
+					s_entity* wall = get_wall_at_tile(player_tile);
+					soft_data->want_to_move_left_timestamp = zero;
+					advance_next_action_time = true;
+					if(!wall) {
+						s_v3 target_pos = player->target_pos;
+						target_pos.x -= 1;
+						player->target_pos = target_pos;
+					}
+				}
+			}
+
+			if(check_action_maybe(soft_update_time, soft_data->want_to_move_right_timestamp, 0.0f)) {
+				wanted_to_perform_action = true;
+				if(can_act) {
+					s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
+					s_entity* wall = get_wall_at_tile(player_tile);
+					soft_data->want_to_move_right_timestamp = zero;
+					advance_next_action_time = true;
+					if(!wall) {
+						s_v3 target_pos = player->target_pos;
+						target_pos.x += 1;
+						player->target_pos = target_pos;
+					}
+				}
+			}
+
+			if(advance_next_action_time) {
+				float diff = soft_update_time - soft_data->next_action_time;
+				soft_data->next_action_time += c_action_interval + diff;
+			}
+
+			if(wanted_to_perform_action && !can_act) {
+				soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
 			}
 
 			if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
@@ -560,10 +600,10 @@ func void update()
 			player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
 
 			{
-				int player_index = tile_index_from_3d(player->pos);
+				int player_index = tile_index_1d_from_3d(player->target_pos);
 				s_entity* end = get_end();
 				if(end) {
-					int end_index = tile_index_from_3d(end->pos);
+					int end_index = tile_index_1d_from_3d(end->pos);
 					if(player_index == end_index) {
 						hard_data->current_map += 1;
 
@@ -956,11 +996,6 @@ func void render(float interp_dt, float delta)
 
 			{
 				draw_rect_3d(player_pos, c_player_size, make_rrr(0.7f), 0);
-
-				{
-					s_v2 portal_size = v2(c_player_size.y);
-					draw_rect_3d(v3(0, portal_size.y * 0.5f, -20), v2(c_player_size.y), make_rgb(0, 1, 0), 0);
-				}
 
 				for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
 					if(!entity_arr->active[i]) {
@@ -1629,9 +1664,22 @@ func void draw_entity_2d(s_editor_entity entity, int x, int y)
 	}
 }
 
-func int tile_index_from_3d(s_v3 pos)
+func s_v2i tile_index_from_3d(s_v3 pos)
 {
-	int result = floorfi(pos.x) + floorfi(pos.z) * c_map_width;
+	s_v2i result = v2i(floorfi(pos.x), floorfi(pos.z));
+	return result;
+}
+
+func int tile_index_1d_from_3d(s_v3 pos)
+{
+	s_v2i temp = v2i(floorfi(pos.x), floorfi(pos.z));
+	int result = tile_index_to_1d(temp);
+	return result;
+}
+
+func int tile_index_to_1d(s_v2i index)
+{
+	int result = index.x + index.y * c_map_width;
 	return result;
 }
 
@@ -1658,5 +1706,22 @@ func void reset_player_pos(s_entity* player)
 func s_entity* get_player()
 {
 	s_entity* result = &game->soft_data.entity_arr.data[c_first_index[e_entity_player]];
+	return result;
+}
+
+func s_entity* get_wall_at_tile(s_v2i index)
+{
+	s_entity* result = null;
+	for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
+		if(!game->soft_data.entity_arr.active[i]) {
+			continue;
+		}
+		s_entity* entity = &game->soft_data.entity_arr.data[i];
+		s_v2i temp = tile_index_from_3d(entity->pos);
+		if(index == temp) {
+			result = entity;
+			break;
+		}
+	}
 	return result;
 }
