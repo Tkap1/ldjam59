@@ -952,6 +952,7 @@ func void update_particles(float delta, b8 do_draw, int render_pass_index)
 template <typename t, int n>
 func int entity_manager_add(s_entity_manager<t, n>* manager, e_entity type, t new_entity)
 {
+	new_entity.type = type;
 	assert(manager->count[type] < g_entity_type_data[type].max_count);
 	int index = manager->free_list[type][manager->count[type]];
 	assert(!manager->active[index]);
@@ -985,7 +986,9 @@ template <typename t, int n>
 func void entity_manager_reset(s_entity_manager<t, n>* manager, e_entity type)
 {
 	manager->count[type] = 0;
-	memset(manager->active, 0, sizeof(manager->active));
+	int first_index = c_first_index[type];
+	int count = c_last_index_plus_one[type] - first_index;
+	memset(&manager->active[first_index], 0, sizeof(manager->active[0]) * count);
 	manager->free_list[type] = (int*)arena_alloc_zero(&game->arena, sizeof(int) * g_entity_type_data[type].max_count);
 	for(int i = 0; i < g_entity_type_data[type].max_count; i += 1) {
 		manager->free_list[type][i] = c_first_index[type] + i;
@@ -1131,6 +1134,7 @@ func b8 cheat_key(int key)
 
 func void pre_render(float delta)
 {
+	(void)delta;
 	reset_linear_arena(&game->render_frame_arena);
 
 	#if defined(_WIN32) && defined(m_debug)
@@ -1439,7 +1443,7 @@ func void draw_rect_3d(s_v3 pos, s_v2 size, s_v4 color, int render_pass_index)
 	data.model = m4_multiply(data.model, m4_scale(v3(size, 1)));
 	data.color = color;
 
-	add_to_render_group(data, e_shader_flat, e_texture_white, e_mesh_quad, render_pass_index);
+	add_to_render_group(data, e_shader_billboard, e_texture_white, e_mesh_quad, render_pass_index);
 }
 
 func void draw_plane(s_v3 topleft, s_v3 topright, s_v3 bottomleft, s_v3 bottomright, s_v4 color, int render_pass_index)

@@ -4,7 +4,8 @@
 func s_loaded_sound load_sound_from_file(char* path)
 {
 	s_loaded_sound result = zero;
-	SDL_LoadWAV(path, &result.spec, &result.data, &result.size_in_bytes);
+	SDL_AudioSpec* temp = SDL_LoadWAV(path, &result.spec, &result.data, &result.size_in_bytes);
+	assert(temp);
 	assert(result.spec.freq == 44100);
 	assert(result.spec.format == 32784);
 	if(result.spec.channels == 1) {

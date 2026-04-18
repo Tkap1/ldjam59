@@ -14,8 +14,8 @@ func void cstr_into_builder(s_str_builder<n>* builder, char* str);
 func void do_leaderboard();
 func b8 is_valid_2d_index(s_v2i index, int x_count, int y_count);
 func b8 check_action(float curr_time, float timestamp, float grace);
+func b8 check_action_maybe(float curr_time, s_maybe<float> timestamp, float grace);
 func void do_screen_shake(float intensity);
-func void teleport_entity(s_entity* entity, s_v2 pos);
 func s_particle_emitter_a make_emitter_a();
 func s_particle_emitter_b make_emitter_b();
 func int add_emitter(s_entity emitter);
@@ -28,6 +28,18 @@ func s_v2i tile_index_from_pos(s_v2 pos);
 template <int n>
 func void builder_add_separator(s_str_builder<n>* builder);
 func void add_non_spammy_message(s_v2 pos, s_len_str text);
+func void teleport_entity(s_entity* entity, s_v3 pos);
+func void set_editor_entity(s_v2i index, e_entity type, int sub_type);
+func void maybe_load_map(int index);
+func void maybe_save_map(int index);
+func void load_map(int index);
+func void save_map(int index);
+func char* to_cstr(s_len_str str, s_linear_arena* arena);
+func void draw_entity_2d(s_editor_entity entity, int x, int y);
+func int tile_index_from_3d(s_v3 pos);
+func s_entity* get_end();
+func void reset_player_pos(s_entity* player);
+func s_entity* get_player();
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif

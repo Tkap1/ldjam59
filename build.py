@@ -38,6 +38,7 @@ def main():
 		success = compile_dll(["../src/game.cpp"], "main", compiler_args, linker_args)
 		if success:
 			shutil.copyfile("build/main.dll", "main.dll")
+			play_success_sound()
 		else:
 			play_fail_sound()
 			compile_platform = False
@@ -102,7 +103,7 @@ def compile_dll(src_files, output_name, in_compiler_args, linker_args):
 	compiler_args = in_compiler_args.copy()
 	compiler_args.append("-LD")
 	compiler_args.append(f"-Fe{output_name}.dll")
-	result = compile(src_files, output_name, f"{output_name}_exe", compiler_args, linker_args)
+	result = compile(src_files, output_name, f"{output_name}_dll", compiler_args, linker_args)
 	return result
 #------------------------------------------------------------------------------------------------------------------------------------
 
@@ -134,6 +135,7 @@ def get_common_compiler_args(debug_mode):
 		"-wd4710", # warning C4710: 'printf': function not inlined
 		"-wd4191", # warning C4191: 'type cast': unsafe conversion from 'FARPROC' to 't_game_func'
 		# "-wd4623",
+		"-wd4062", # enumerator 'e_entity_player' in switch of enum 'e_entity' is not handled
 
 		# "-fsanitize=address",
 	]
@@ -182,6 +184,10 @@ def get_common_linker_args(debug_mode):
 
 def play_fail_sound():
 	run_no_wait("cmdmp3 build_fail.mp3", output=False);
+#------------------------------------------------------------------------------------------------------------------------------------
+
+def play_success_sound():
+	run_no_wait("cmdmp3 build_success.mp3", output=False);
 #------------------------------------------------------------------------------------------------------------------------------------
 
 def start_time(text = None):

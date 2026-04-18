@@ -236,8 +236,10 @@ func void input()
 		g_mouse.y = range_lerp(g_mouse.y, letterbox.y, letterbox.y + letterbox.size.y, 0, c_world_size.y);
 	}
 
-	s_hard_game_data* hard_data = &game->hard_data;
+	// s_hard_game_data* hard_data = &game->hard_data;
 	s_soft_game_data* soft_data = &game->soft_data;
+
+	float soft_update_time = soft_data->update_count * (float)c_update_delay;
 
 	// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		input start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	{
@@ -287,6 +289,35 @@ func void input()
 					game->input_arr[key].half_transition_count += 1;
 				}
 				if(event.type == SDL_KEYDOWN) {
+
+					int entity_type_arr[9] = {
+						e_editor_entity_wall, e_editor_entity_end, -1,
+						-1, -1, -1,
+						-1, -1, -1,
+					};
+					for(int i = 0; i < 9; i += 1) {
+						int wanted_scancode = SDL_SCANCODE_1 + i;
+						if(scancode == wanted_scancode) {
+							if(event.key.keysym.mod & KMOD_LCTRL) {
+								#if defined(m_debug)
+								maybe_load_map(i);
+								#endif
+							}
+							else if(game->in_editor) {
+								if(event.key.keysym.mod & KMOD_LSHIFT) {
+									#if defined(m_debug)
+									maybe_save_map(i);
+									#endif
+								}
+								else {
+									if(entity_type_arr[i] != -1) {
+										game->editor.to_place = maybe((e_editor_entity)entity_type_arr[i]);
+									}
+								}
+							}
+						}
+					}
+
 					if(key == SDLK_r && !is_repeat) {
 						if(event.key.keysym.mod & KMOD_LCTRL) {
 							game->do_hard_reset = true;
@@ -295,7 +326,36 @@ func void input()
 							game->do_hard_reset = true;
 						}
 					}
-					else if(key == SDLK_SPACE && !is_repeat) {
+					else if(scancode == SDL_SCANCODE_SPACE && !is_repeat) {
+					}
+					else if(scancode == SDL_SCANCODE_W) {
+						if(game->in_editor) {
+							game->editor.cam_pos.y -= 20;
+						}
+						else if(!is_repeat) {
+							soft_data->want_to_move_timestamp = maybe(soft_update_time);
+						}
+					}
+					else if(scancode == SDL_SCANCODE_S) {
+						if(game->in_editor) {
+							game->editor.cam_pos.y += 20;
+						}
+					}
+					else if(scancode == SDL_SCANCODE_A) {
+						if(game->in_editor) {
+							game->editor.cam_pos.x -= 20;
+						}
+						else if(!is_repeat) {
+							soft_data->want_to_move_left_timestamp = maybe(soft_update_time);
+						}
+					}
+					else if(scancode == SDL_SCANCODE_D) {
+						if(game->in_editor) {
+							game->editor.cam_pos.x += 20;
+						}
+						else if(!is_repeat) {
+							soft_data->want_to_move_right_timestamp = maybe(soft_update_time);
+						}
 					}
 					else if(scancode == SDL_SCANCODE_LEFT && !is_repeat) {
 					}
@@ -310,7 +370,12 @@ func void input()
 					}
 					else if((key == SDLK_ESCAPE && !is_repeat) || (key == SDLK_o && !is_repeat) || (key == SDLK_p && !is_repeat)) {
 						if(state0 == e_game_state0_play) {
-							add_state(&game->state0, e_game_state0_pause);
+							if(game->in_editor) {
+								game->editor.to_place = zero;
+							}
+							else {
+								add_state(&game->state0, e_game_state0_pause);
+							}
 						}
 						else if(state0 == e_game_state0_pause) {
 							pop_state_transition(&game->state0, game->render_time, c_transition_time);
@@ -329,8 +394,11 @@ func void input()
 						game->speed_index = circular_index(game->speed_index - 1, array_count(c_game_speed_arr));
 						printf("Game speed: %f\n", c_game_speed_arr[game->speed_index]);
 					}
-					else if(key == SDLK_F1) {
+					else if(key == SDLK_F1 && !is_repeat) {
 						game->cheat_menu_enabled = !game->cheat_menu_enabled;
+					}
+					else if(key == SDLK_F2 && !is_repeat) {
+						game->in_editor = !game->in_editor;
 					}
 					else if(key == SDLK_j && !is_repeat) {
 					}
@@ -417,6 +485,18 @@ func void update()
 	if(game->do_soft_reset) {
 		game->do_soft_reset = false;
 		memset(soft_data, 0, sizeof(*soft_data));
+
+		for_enum(type_i, e_entity) {
+			entity_manager_reset(&soft_data->entity_arr, type_i);
+		}
+
+		{
+			s_entity player = zero;
+			reset_player_pos(&player);
+			entity_manager_add(&soft_data->entity_arr, e_entity_player, player);
+		}
+
+		load_map(hard_data->current_map);
 	}
 
 	b8 should_do_game = false;
@@ -440,12 +520,68 @@ func void update()
 	}
 
 	if(should_do_game) {
+
+		s_entity* player = &entity_arr->data[0];
+		float soft_update_time = soft_data->update_count * (float)c_update_delay;
+
+		if(game->in_editor) {
+		}
+		else {
+			b8 can_act = false;
+			if(soft_update_time >= soft_data->next_action_time && soft_update_time <= soft_data->next_action_time + c_action_grace_period){
+				can_act = true;
+			}
+
+			if(check_action_maybe(soft_update_time, soft_data->want_to_move_timestamp, 0.0f)) {
+				if(!can_act) {
+					soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
+				}
+			}
+
+			if(can_act) {
+				soft_data->draw_signal = true;
+				if(check_action_maybe(soft_update_time, soft_data->want_to_move_timestamp, 0.0f)) {
+					soft_data->want_to_move_timestamp = zero;
+					s_v3 target_pos = player->target_pos;
+					target_pos.z -= 1;
+					player->target_pos = target_pos;
+					float diff = soft_update_time - soft_data->next_action_time;
+					soft_data->next_action_time += c_action_interval + diff;
+				}
+			}
+			else {
+				soft_data->draw_signal = false;
+			}
+
+			if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
+				soft_data->next_action_time += c_action_interval + c_action_grace_period;
+			}
+
+			player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
+
+			{
+				int player_index = tile_index_from_3d(player->pos);
+				s_entity* end = get_end();
+				if(end) {
+					int end_index = tile_index_from_3d(end->pos);
+					if(player_index == end_index) {
+						hard_data->current_map += 1;
+
+						if(hard_data->current_map < c_map_count) {
+							game->do_soft_reset = true;
+						}
+					}
+				}
+			}
+		}
+
 		game->update_time += (float)c_update_delay;
 		hard_data->update_count += 1;
 		soft_data->update_count += 1;
 	}
 
-	if(false) {
+	if(hard_data->current_map >= c_map_count) {
+		hard_data->current_map = 0;
 		if(game->leaderboard_nice_name.count <= 0 && c_on_web) {
 			add_temporary_state_transition(&game->state0, e_game_state0_input_name, game->render_time, c_transition_time);
 		}
@@ -467,16 +603,19 @@ func void render(float interp_dt, float delta)
 {
 	pre_render(delta);
 
-	s_hard_game_data* hard_data = &game->hard_data;
+	// s_hard_game_data* hard_data = &game->hard_data;
 	s_soft_game_data* soft_data = &game->soft_data;
 	auto entity_arr = &soft_data->entity_arr;
-	s_entity player = entity_arr->data[c_first_index[e_entity_player]];
-	s_v2 player_pos = lerp_v2(player.prev_pos, player.pos, interp_dt);
+
+	s_entity player = entity_arr->data[0];
+	s_v3 player_pos = lerp_v3(player.prev_pos, player.pos, interp_dt);
 
 	s_m4 ortho = make_orthographic(0, c_world_size.x, c_world_size.y, 0, -100, 100);
-	s_m4 view = m4_identity();
-	s_m4 view_inv = view;
-	s_m4 view_projection = m4_multiply(ortho, view);
+	s_m4 view_3d = look_at(player_pos + v3(0, 2, 3), player_pos, c_y_axis);
+	s_m4 perspective = make_perspective(45.0f, c_aspect_ratio, 0.01f, 100.0f);
+	s_m4 view_2d = m4_translate(v3(-game->editor.cam_pos.x, -game->editor.cam_pos.y, 0.0f));
+	s_m4 view_inv = m4_inverse(view_2d);
+	s_m4 view_projection = m4_multiply(ortho, view_2d);
 
 	s_v2 world_mouse = v2_multiply_m4(g_mouse, view_inv);
 
@@ -725,6 +864,142 @@ func void render(float interp_dt, float delta)
 
 		b8 do_game_ui = true;
 
+		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		editor start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		if(game->in_editor) {
+			s_editor* editor = &game->editor;
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		editor background start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				s_v2 topleft_v = v2_multiply_m4(v2(0), view_inv);
+				s_v2 bottomright_v = v2_multiply_m4(c_world_size, view_inv);
+				s_v2i topleft = v2i(floorfi(topleft_v.x / (float)c_tile_size), floorfi(topleft_v.y / (float)c_tile_size));
+				s_v2i bottomright = v2i(ceilfi(bottomright_v.x / (float)c_tile_size), ceilfi(bottomright_v.y / (float)c_tile_size));
+
+				for(int y = topleft.y; y < bottomright.y; y += 1) {
+					for(int x = topleft.x; x < bottomright.x; x += 1) {
+						s_v2 pos = v2(x * c_tile_size, y * c_tile_size);
+						b8 inside_map = x >= 0 && x < c_map_width && y >= 0 && y < c_map_height;
+						float white = inside_map ? 0.25f : 0.1f;
+						if((x + y) % 2 == 0) {
+							white = inside_map ? 0.15f : 0.01f;
+						}
+						draw_rect_topleft(pos, c_tile_size_v, make_rrr(white), 0);
+					}
+				}
+
+				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.view = view_2d;
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_disabled;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true, 0);
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		editor background end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			s_v2i mouse_tile = v2i(floorfi(world_mouse.x / c_tile_size), floorfi(world_mouse.y / c_tile_size));
+			s_v2 mouse_tile_v = v2(mouse_tile.x * c_tile_size, mouse_tile.y * c_tile_size);
+			b8 valid_index = is_valid_2d_index(mouse_tile, c_map_width, c_map_height);
+			if(editor->to_place.valid) {
+				draw_rect_topleft(mouse_tile_v, c_tile_size_v, make_rgb(0, 1, 0), 0);
+				if(is_key_down(c_left_button) && valid_index) {
+					switch(editor->to_place.value) {
+						xcase e_editor_entity_wall: {
+							set_editor_entity(mouse_tile, e_entity_wall, 0);
+						};
+
+						xcase e_editor_entity_end: {
+							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_end);
+						}
+					}
+				}
+			}
+			if(is_key_down(c_right_button) && valid_index) {
+				editor->map.active[mouse_tile.y][mouse_tile.x] = false;
+			}
+
+			for(int y = 0; y < c_map_height; y += 1) {
+				for(int x = 0; x < c_map_width; x += 1) {
+					if(editor->map.active[y][x]) {
+						draw_entity_2d(editor->map.entity_arr[y][x], x, y);
+					}
+				}
+			}
+
+			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+			data.view = view_2d;
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_disabled;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true, 0);
+		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		editor end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+		else {
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw ground start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				draw_plane(
+					v3(-100, 0, -100),
+					v3(100, 0, -100),
+					v3(-100, 0, 100),
+					v3(100, 0, 100),
+					make_rrr(0.25f),
+					0
+				);
+
+				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.view = view_3d;
+				data.projection = perspective;
+				data.blend_mode = e_blend_mode_disabled;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true, 0);
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw ground end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			{
+				draw_rect_3d(player_pos, c_player_size, make_rrr(0.7f), 0);
+
+				{
+					s_v2 portal_size = v2(c_player_size.y);
+					draw_rect_3d(v3(0, portal_size.y * 0.5f, -20), v2(c_player_size.y), make_rgb(0, 1, 0), 0);
+				}
+
+				for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
+					if(!entity_arr->active[i]) {
+						continue;
+					}
+					s_entity entity = entity_arr->data[i];
+					s_v3 pos = entity.pos;
+					pos.y += 0.5f;
+					draw_mesh(e_mesh_cube, pos, v3(1, 1, 1), make_rrr(1), e_shader_mesh, 0);
+				}
+
+				for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
+					if(!entity_arr->active[i]) {
+						continue;
+					}
+					s_entity entity = entity_arr->data[i];
+					s_v3 pos = entity.pos;
+					pos.y += 0.5f;
+					draw_mesh(e_mesh_sphere, pos, v3(0.5f), make_rgb(0, 1, 0), e_shader_mesh, 0);
+				}
+
+				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.view = view_3d;
+				data.projection = perspective;
+				data.blend_mode = e_blend_mode_disabled;
+				data.depth_mode = e_depth_mode_read_and_write;
+				render_flush(data, true, 0);
+			}
+
+			if(soft_data->draw_signal) {
+				draw_text(S("NOW"), wxy(0.5f, 0.1f), 64, make_rrr(1), true, &game->font, zero, 0);
+				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_normal;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true, 0);
+			}
+		}
+
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		#if 0
@@ -760,7 +1035,7 @@ func void render(float interp_dt, float delta)
 				s_entity* fct = &entity_arr->data[fct_i];
 				float passed = game->render_time - fct->spawn_timestamp;
 				float alpha = ease_in_expo_advanced(passed, 0, 1, 1, 0);
-				draw_text(fct->text, fct->pos, 24, make_ra(1, alpha), true, &game->font, zero, 0);
+				draw_text(fct->text, fct->pos.xy, 24, make_ra(1, alpha), true, &game->font, zero, 0);
 				fct->pos.y -= delta * 60;
 				if(passed >= 1) {
 					entity_manager_remove(entity_arr, e_entity_fct, fct_i);
@@ -837,9 +1112,6 @@ func void render(float interp_dt, float delta)
 		}
 		#endif
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheat menu end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-	}
-	else {
-		update_particles(delta, false, 0);
 	}
 
 	if(do_defeat) {
@@ -1067,17 +1339,20 @@ func b8 check_action(float curr_time, float timestamp, float grace)
 	return result;
 }
 
+func b8 check_action_maybe(float curr_time, s_maybe<float> timestamp, float grace)
+{
+	b8 result = false;
+	if(timestamp.valid) {
+		result = check_action(curr_time, timestamp.value, grace);
+	}
+	return result;
+}
+
 func void do_screen_shake(float intensity)
 {
 	s_soft_game_data* soft_data = &game->soft_data;
 	soft_data->start_screen_shake_timestamp = game->render_time;
 	soft_data->shake_intensity = intensity;
-}
-
-func void teleport_entity(s_entity* entity, s_v2 pos)
-{
-	entity->pos = pos;
-	entity->prev_pos = pos;
 }
 
 func s_particle_emitter_a make_emitter_a()
@@ -1222,10 +1497,166 @@ func void add_non_spammy_message(s_v2 pos, s_len_str text)
 	if(passed >= 0.5f) {
 		game->soft_data.last_non_spammy_timestamp = game->render_time;
 		s_entity fct = zero;
-		fct.prev_pos = pos;
-		fct.pos = pos;
+		fct.prev_pos.xy = pos;
+		fct.pos.xy = pos;
 		fct.spawn_timestamp = game->render_time;
 		fct.text = text;
 		entity_manager_add_if_not_full(&game->soft_data.entity_arr, e_entity_fct, fct);
 	}
+}
+
+func void teleport_entity(s_entity* entity, s_v3 pos)
+{
+	entity->pos = pos;
+	entity->prev_pos = pos;
+}
+
+func void set_editor_entity(s_v2i index, e_entity type, int sub_type)
+{
+	s_editor* editor = &game->editor;
+	s_editor_entity entity = zero;
+	entity.type = type;
+	entity.sub_type = sub_type;
+	editor->map.entity_arr[index.y][index.x] = entity;
+	editor->map.active[index.y][index.x] = true;
+}
+
+func void maybe_load_map(int index)
+{
+	if(game->editor.what_to_save_or_load != index || game->editor.last_action != e_load) {
+		game->editor.save_or_load_state = 0;
+	}
+	game->editor.last_action = e_load;
+	game->editor.what_to_save_or_load = index;
+	game->editor.save_or_load_state += 1;
+	if(game->editor.save_or_load_state == 2) {
+		printf("LOADED MAP %i\n", index);
+		game->editor.save_or_load_state = 0;
+		load_map(index);
+	}
+	else {
+		printf("LOAD MAP %i? ARE YOU SURE?\n", index);
+	}
+}
+
+func void maybe_save_map(int index)
+{
+	if(game->editor.what_to_save_or_load != index || game->editor.last_action != e_save) {
+		game->editor.save_or_load_state = 0;
+	}
+	game->editor.last_action = e_save;
+	game->editor.what_to_save_or_load = index;
+	game->editor.save_or_load_state += 1;
+	if(game->editor.save_or_load_state == 2) {
+		printf("SAVED MAP %i\n", index);
+		game->editor.save_or_load_state = 0;
+		save_map(index);
+	}
+	else {
+		printf("SAVE MAP %i? ARE YOU SURE?\n", index);
+	}
+}
+
+func void load_map(int index)
+{
+	s_len_str path = format_text("assets/%i.map", index);
+	char* temp_path = to_cstr(path, &game->update_frame_arena);
+	u8* data = read_file(temp_path, &game->update_frame_arena, null);
+	if(!data) {
+		return;
+	}
+
+	game->hard_data.current_map = index;
+
+	for_enum(type_i, e_entity) {
+		if(type_i != e_entity_player) {
+			entity_manager_reset(&game->soft_data.entity_arr, type_i);
+		}
+	}
+
+	s_map* map = (s_map*)data;
+	assert(map->version == 1);
+
+	#if defined(m_debug)
+	game->editor.map = *map;
+	#endif
+
+	for(int y = 0; y < c_map_height; y += 1) {
+		for(int x = 0; x < c_map_width; x += 1) {
+			if(map->active[y][x]) {
+				s_editor_entity editor_entity = map->entity_arr[y][x];
+				s_entity entity = zero;
+				if(editor_entity.type == e_entity_pickup) {
+					entity.pickup_type = (e_pickup)editor_entity.sub_type;
+				}
+				teleport_entity(&entity, v3(x, 0.0f, -y));
+				entity_manager_add(&game->soft_data.entity_arr, editor_entity.type, entity);
+			}
+		}
+	}
+
+	reset_player_pos(get_player());
+}
+
+func void save_map(int index)
+{
+	s_len_str path = format_text("assets/%i.map", index);
+	char* temp_path = to_cstr(path, &game->update_frame_arena);
+	game->editor.map.version = c_map_version;
+	write_file(temp_path, &game->editor.map, sizeof(game->editor.map));
+}
+
+func char* to_cstr(s_len_str str, s_linear_arena* arena)
+{
+	char* result = (char*)arena_alloc(arena, str.count + 1);
+	memcpy(result, str.str, str.count);
+	result[str.count] = 0;
+	return result;
+}
+
+func void draw_entity_2d(s_editor_entity entity, int x, int y)
+{
+	s_v2 base_pos = v2(x, y) * c_tile_size;
+	switch(entity.type) {
+		xcase e_entity_wall: {
+			draw_rect_topleft(base_pos, c_tile_size_v, make_rgb(1, 0, 1), 0);
+		}
+		xcase e_entity_pickup: {
+			s_v2 pos = base_pos;
+			pos += c_tile_size_v * 0.5f;
+			draw_atlas(game->atlas, pos, c_tile_size_v, v2i(2, 0), make_rrr(1), 0);
+		}
+	}
+}
+
+func int tile_index_from_3d(s_v3 pos)
+{
+	int result = floorfi(pos.x) + floorfi(pos.z) * c_map_width;
+	return result;
+}
+
+func s_entity* get_end()
+{
+	s_entity* result = null;
+	for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
+		if(!game->soft_data.entity_arr.active[i]) {
+			continue;
+		}
+		result = &game->soft_data.entity_arr.data[i];
+		break;
+	}
+	return result;
+}
+
+func void reset_player_pos(s_entity* player)
+{
+	s_v3 target_pos = v3(c_map_width / 2, c_player_size.y * 0.5f, 0);
+	player->target_pos = target_pos;
+	teleport_entity(player, target_pos);
+}
+
+func s_entity* get_player()
+{
+	s_entity* result = &game->soft_data.entity_arr.data[c_first_index[e_entity_player]];
+	return result;
 }

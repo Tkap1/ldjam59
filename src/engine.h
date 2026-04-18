@@ -407,6 +407,15 @@ data_enum(e_entity,
 	visual_effect {
 		.max_count = 512,
 	}
+	wall {
+		.max_count = 512,
+	}
+	enemy {
+		.max_count = 512,
+	}
+	pickup {
+		.max_count = 512,
+	}
 )
 
 struct s_entity_type_data
@@ -476,6 +485,9 @@ global constexpr int c_first_index[e_entity_count] = {
 	get_first_index(e_entity_emitter),
 	get_first_index(e_entity_fct),
 	get_first_index(e_entity_visual_effect),
+	get_first_index(e_entity_wall),
+	get_first_index(e_entity_enemy),
+	get_first_index(e_entity_pickup),
 };
 
 global constexpr int c_last_index_plus_one[e_entity_count] = {
@@ -483,6 +495,9 @@ global constexpr int c_last_index_plus_one[e_entity_count] = {
 	get_last_index_plus_one(e_entity_emitter),
 	get_last_index_plus_one(e_entity_fct),
 	get_last_index_plus_one(e_entity_visual_effect),
+	get_last_index_plus_one(e_entity_wall),
+	get_last_index_plus_one(e_entity_enemy),
+	get_last_index_plus_one(e_entity_pickup),
 };
 
 func s_len_str format_text2(const char* text, ...);

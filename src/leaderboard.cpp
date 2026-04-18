@@ -277,15 +277,6 @@ func void set_leaderboard_name_fail(emscripten_fetch_t *fetch)
 	emscripten_fetch_close(fetch);
 }
 
-
-func char* to_cstr(s_len_str str, s_linear_arena* arena)
-{
-	char* result = (char*)arena_alloc(arena, str.count + 1);
-	memcpy(result, str.str, str.count);
-	result[str.count] = 0;
-	return result;
-}
-
 func void set_leaderboard_name(s_len_str name)
 {
 	printf("%s\n", __FUNCTION__);

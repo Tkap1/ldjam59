@@ -35,8 +35,8 @@ out vec4 out_color;
 void main()
 {
 	vec4 texture_color = texture(in_texture, v_uv);
-	int x = int(floor(v_uv.x * 200.0));
-	int y = int(floor(v_uv.y * 200.0));
+	int x = int(floor(v_uv.x * 200.0 + 0.5));
+	int y = int(floor(v_uv.y * 200.0 + 0.5));
 	float s = (x + y) % 2 == 0 ? 0.4 : 0.3;
 	texture_color.rgb *= s;
 

@@ -2,13 +2,12 @@
 
 global constexpr s_v2 c_world_size = {1366, 768};
 global constexpr float c_aspect_ratio = c_world_size.x / c_world_size.y;
-global constexpr int c_num_tiles = 20;
 global constexpr int c_tile_size = 32;
 global constexpr s_v2 c_tile_size_v = {c_tile_size, c_tile_size};
 global constexpr s_v2 c_world_center = {c_world_size.x * 0.5f, c_world_size.y * 0.5f};
 global constexpr int c_max_vertices = 16384;
 global constexpr int c_max_faces = 8192;
-global constexpr int c_updates_per_second = 30;
+global constexpr int c_updates_per_second = 60;
 global constexpr f64 c_update_delay = 1.0 / c_updates_per_second;
 global constexpr float c_transition_time = 0.25f;
 global constexpr float c_knockback = 400;

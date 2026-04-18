@@ -1,6 +1,14 @@
 
 #include "gen_meta/game.h.enums"
 
+global constexpr s_v2 c_player_size = {0.2f, 0.5f};
+global constexpr float c_action_interval = 0.5f;
+global constexpr float c_action_grace_period = 0.5f;
+global constexpr int c_map_width = 5;
+global constexpr int c_map_height = 32;
+global constexpr int c_map_version = 1;
+global constexpr int c_map_count = 2;
+
 #if defined(__EMSCRIPTEN__)
 
 #define m_gl_funcs \
@@ -160,23 +168,26 @@ enum e_button_result
 	e_button_result_right_click,
 };
 
+enum e_pickup
+{
+	e_pickup_end,
+};
+
 struct s_entity
 {
+	e_entity type;
 	int id;
 	float timer;
-	s_v2 pos;
-	s_v2 prev_pos;
+	s_v3 pos;
+	s_v3 prev_pos;
 	float spawn_timestamp;
 	float duration;
 	union {
 
 		// @Note(tkap, 04/10/2025): Player
 		struct {
-			b8 walking;
-			int animation_index;
-			float animation_time;
-			float rotation;
-			s_v2 last_dir;
+			s_v3 target_pos;
+			b8 on_ground;
 		};
 
 		// @Note(tkap, 31/07/2025): Emitter
@@ -189,7 +200,25 @@ struct s_entity
 		struct {
 			s_len_str text;
 		};
+
+		// @Note(tkap, 31/07/2025): Pickup
+		struct {
+			e_pickup pickup_type;
+		};
 	};
+};
+
+struct s_editor_entity
+{
+	e_entity type;
+	int sub_type;
+};
+
+struct s_map
+{
+	int version;
+	b8 active[c_map_height][c_map_width];
+	s_editor_entity entity_arr[c_map_height][c_map_width];
 };
 
 struct s_hold_input
@@ -220,12 +249,21 @@ struct s_soft_game_data
 
 	s_entity_manager<s_entity, c_max_entities> entity_arr;
 
+	s_maybe<float> want_to_move_timestamp;
+	s_maybe<float> want_to_move_left_timestamp;
+	s_maybe<float> want_to_move_right_timestamp;
+	s_maybe<float> last_action_success_timestamp;
+	s_maybe<float> last_action_timestamp;
+	b8 draw_signal;
+	float next_action_time;
+
 	s_list<s_timed_msg, 8> timed_msg_arr;
 };
 
 struct s_hard_game_data
 {
 	int update_count;
+	int current_map;
 };
 
 struct s_render_pass
@@ -243,6 +281,31 @@ struct s_tutorial
 	s_maybe<float> tutorial_end;
 };
 
+#if defined(m_debug)
+
+enum
+{
+	e_save,
+	e_load,
+};
+
+enum e_editor_entity
+{
+	e_editor_entity_wall,
+	e_editor_entity_end,
+};
+
+struct s_editor
+{
+	int last_action;
+	int what_to_save_or_load;
+	int save_or_load_state;
+	s_v2 cam_pos;
+	s_maybe<e_editor_entity> to_place;
+	s_map map;
+};
+#endif
+
 struct s_game
 {
 	s_tutorial tutorial;
@@ -250,6 +313,9 @@ struct s_game
 	s_lerpable music_speed;
 	s_lerpable music_volume;
 	int next_entity_id;
+
+	b8 in_editor;
+	s_editor editor;
 
 	#if defined(m_debug)
 	b8 cheat_menu_enabled;

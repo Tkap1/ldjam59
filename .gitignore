@@ -36,3 +36,4 @@ build/**
 game_requests.txt
 .tags
 *.rdi
+.vs
