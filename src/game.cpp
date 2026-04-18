@@ -292,7 +292,7 @@ func void input()
 
 					int entity_type_arr[9] = {
 						e_editor_entity_wall, e_editor_entity_end, e_editor_entity_fence,
-						e_editor_entity_spike, -1, -1,
+						e_editor_entity_spike, e_editor_entity_enemy, -1,
 						-1, -1, -1,
 					};
 					for(int i = 0; i < 9; i += 1) {
@@ -356,6 +356,11 @@ func void input()
 						}
 						else if(!is_repeat) {
 							soft_data->want_to_move_right_timestamp = maybe(soft_update_time);
+						}
+					}
+					else if(scancode == SDL_SCANCODE_F) {
+						if(!is_repeat) {
+							soft_data->want_to_attack_timestamp = maybe(soft_update_time);
 						}
 					}
 					else if(scancode == SDL_SCANCODE_LEFT && !is_repeat) {
@@ -592,17 +597,22 @@ func void update()
 				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_jump_timestamp, 0.0f)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
-						// s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
-						// s_entity* wall = get_wall_at_tile(player_tile);
 						soft_data->want_to_jump_timestamp = zero;
 						advance_next_action_time = true;
 						jump_forward(player);
 						player->is_jumping = maybe(soft_update_time);
-						// if(!wall) {
-						// 	s_v3 target_pos = player->target_pos;
-						// 	target_pos.x += 1;
-						// 	player->target_pos = target_pos;
-						// }
+					}
+				}
+
+				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_attack_timestamp, 0.0f)) {
+					wanted_to_perform_action = true;
+					if(can_act) {
+						soft_data->want_to_attack_timestamp = zero;
+						advance_next_action_time = true;
+						s_maybe<int> enemy = get_closest_enemy_in_attack_range(player->pos);
+						if(enemy.valid) {
+							kill_enemy(enemy.value);
+						}
 					}
 				}
 
@@ -632,6 +642,9 @@ func void update()
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update pickups start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
+				if(!entity_arr->active[i]) {
+					continue;
+				}
 				s_entity* entity = &entity_arr->data[i];
 				if(entity->pickup_type == e_pickup_spike) {
 					if(float_equals(entity->dir, 0.0f)) {
@@ -651,6 +664,25 @@ func void update()
 				}
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update pickups end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+				if(!entity_arr->active[i]) {
+					continue;
+				}
+				s_entity* entity = &entity_arr->data[i];
+				s_v3 target_pos = player->pos;
+				target_pos.y = 0;
+				s_v3 source_pos = entity->pos;
+				source_pos.y = 0;
+				entity->pos = go_towards_v3(source_pos, target_pos, delta);
+
+				float distance = v3_distance(source_pos, target_pos);
+				if(distance <= c_enemy_range) {
+					start_losing(0.0f);
+				}
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			{
 				s_v2i player_tile = tile_index_from_3d(player->target_pos);
@@ -1021,6 +1053,10 @@ func void render(float interp_dt, float delta)
 						xcase e_editor_entity_spike: {
 							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_spike);
 						}
+
+						xcase e_editor_entity_enemy: {
+							set_editor_entity(mouse_tile, e_entity_enemy, 0);
+						}
 					}
 				}
 			}
@@ -1078,6 +1114,7 @@ func void render(float interp_dt, float delta)
 					draw_rect_3d(pos, c_player_size, make_rrr(0.7f), 0);
 				}
 
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw wall start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
 					if(!entity_arr->active[i]) {
 						continue;
@@ -1093,7 +1130,9 @@ func void render(float interp_dt, float delta)
 					pos.y += size.y * 0.5f;
 					draw_mesh(e_mesh_cube, pos, size, color, e_shader_mesh, 0);
 				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw wall end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw pickups start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
 					if(!entity_arr->active[i]) {
 						continue;
@@ -1116,6 +1155,23 @@ func void render(float interp_dt, float delta)
 						}
 					}
 				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw pickups end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+				for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+					if(!entity_arr->active[i]) {
+						continue;
+					}
+					s_entity entity = entity_arr->data[i];
+					s_v3 pos = lerp_v3(entity.prev_pos, entity.pos, interp_dt);
+					pos.y += 0.25f;
+					s_v4 color = make_rrr(0.7f);
+					if(v3_distance(player.pos, entity.pos) <= c_player_range) {
+						color = make_rrr(1.5f);
+					}
+					draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(6, 0), color, c_pi, zero, 0);
+				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
 				data.view = view_3d;
@@ -1716,7 +1772,7 @@ func void load_map(int index)
 	game->editor.map = *map;
 	#endif
 
-	for(int y = 0; y < 32; y += 1) {
+	for(int y = 0; y < c_map_height; y += 1) {
 		for(int x = 0; x < c_map_width; x += 1) {
 			if(map->active[y][x]) {
 				s_editor_entity editor_entity = map->entity_arr[y][x];
@@ -1768,15 +1824,18 @@ func void draw_entity_2d(s_editor_entity entity, int x, int y)
 		}
 		xcase e_entity_pickup: {
 			s_v2 pos = base_pos;
-			pos += c_tile_size_v * 0.5f;
 			switch(entity.sub_type) {
 				xcase e_pickup_end: {
-					draw_atlas(game->atlas, pos, c_tile_size_v, v2i(2, 0), make_rrr(1), 0);
+					draw_atlas_topleft(game->atlas, pos, c_tile_size_v, v2i(2, 0), make_rrr(1), 0);
 				}
 				xcase e_pickup_spike: {
-					draw_atlas(game->atlas, pos, c_tile_size_v, v2i(5, 0), make_rrr(1), 0);
+					draw_atlas_topleft(game->atlas, pos, c_tile_size_v, v2i(5, 0), make_rrr(1), 0);
 				}
 			}
+		}
+		xcase e_entity_enemy: {
+			s_v2 pos = base_pos;
+			draw_atlas_topleft(game->atlas, pos, c_tile_size_v, v2i(6, 0), make_rrr(1), 0);
 		}
 	}
 }
@@ -1954,4 +2013,27 @@ func void start_losing(float delay)
 		game->soft_data.lose_timestamp = maybe(soft_update_time);
 		game->soft_data.lose_delay = delay;
 	}
+}
+
+func void kill_enemy(int index)
+{
+	game->soft_data.entity_arr.active[index] = false;
+}
+
+func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos)
+{
+	s_maybe<int> result = zero;
+	float smallest_dist = 9999999;
+	for(int i = c_first_index[e_entity_enemy]; i < c_last_index_plus_one[e_entity_enemy]; i += 1) {
+		if(!game->soft_data.entity_arr.active[i]) {
+			continue;
+		}
+		s_entity entity = game->soft_data.entity_arr.data[i];
+		float dist = v3_distance(entity.pos, pos);
+		if(dist < smallest_dist && dist < c_player_range) {
+			smallest_dist = dist;
+			result = maybe(i);
+		}
+	}
+	return result;
 }

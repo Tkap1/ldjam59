@@ -51,6 +51,8 @@ func b8 check_for_win(s_v3 pos);
 func b8 will_win_soon();
 func b8 will_lose_soon();
 func void start_losing(float delay);
+func void kill_enemy(int index);
+func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif

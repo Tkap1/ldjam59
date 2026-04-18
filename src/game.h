@@ -8,6 +8,8 @@ global constexpr int c_map_width = 5;
 global constexpr int c_map_height = 128;
 global constexpr int c_map_version = 1;
 global constexpr int c_map_count = 10;
+global constexpr float c_player_range = 1;
+global constexpr float c_enemy_range = 0.2f;
 
 #if defined(__EMSCRIPTEN__)
 
@@ -260,6 +262,7 @@ struct s_soft_game_data
 	s_maybe<float> want_to_move_left_timestamp;
 	s_maybe<float> want_to_move_right_timestamp;
 	s_maybe<float> want_to_jump_timestamp;
+	s_maybe<float> want_to_attack_timestamp;
 	s_maybe<float> last_action_success_timestamp;
 	s_maybe<float> last_action_timestamp;
 	b8 draw_signal;
@@ -306,6 +309,7 @@ enum e_editor_entity
 	e_editor_entity_end,
 	e_editor_entity_fence,
 	e_editor_entity_spike,
+	e_editor_entity_enemy,
 };
 
 struct s_editor
