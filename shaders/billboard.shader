@@ -22,6 +22,7 @@ shared_var vec4 v_mix_color;
 #if defined(m_vertex)
 void main()
 {
+	#if 0
 	float scale_x = length(vec3(instance_model[0]));
 	float scale_y = length(vec3(instance_model[1]));
 
@@ -33,6 +34,33 @@ void main()
 	world_pos += cam_right * vertex_pos.x * scale_x + up * vertex_pos.y * scale_y;
 
 	gl_Position = projection * view * vec4(world_pos, 1.0);
+
+	// @Note(tkap, 18/04/2026): Rotate around Z axis
+	#else
+	float scale_x = length(vec3(instance_model[0]));
+	float scale_y = length(vec3(instance_model[1]));
+
+	// Extract Z-axis rotation from the model's X axis (column 0)
+	vec3 model_right = normalize(vec3(instance_model[0]));
+	float roll = atan(model_right.y, model_right.x);
+
+	float cos_roll = cos(roll);
+	float sin_roll = sin(roll);
+
+	// Rotate both billboard axes by the roll angle in screen space
+	vec3 cam_right = vec3(view[0][0], view[1][0], view[2][0]);
+	vec3 cam_up    = vec3(0.0, 1.0, 0.0);
+
+	vec3 rotated_right = cos_roll * cam_right + sin_roll * cam_up;
+	vec3 rotated_up    = -sin_roll * cam_right + cos_roll * cam_up;
+
+	vec3 world_pos = vec3(instance_model[3]);
+
+	world_pos += rotated_right * vertex_pos.x * scale_x + rotated_up * vertex_pos.y * scale_y;
+
+	gl_Position = projection * view * vec4(world_pos, 1.0);
+	#endif
+
 	v_color = vertex_color * instance_color;
 	v_normal = vertex_normal;
 	v_vertex_uv = vertex_uv;

@@ -1446,6 +1446,31 @@ func void draw_rect_3d(s_v3 pos, s_v2 size, s_v4 color, int render_pass_index)
 	add_to_render_group(data, e_shader_billboard, e_texture_white, e_mesh_quad, render_pass_index);
 }
 
+func void draw_billboard_ex(s_atlas atlas, s_v3 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data, int render_pass_index)
+{
+	s_instance_data data = zero;
+	data.model = m4_translate(pos);
+	if(rotation != 0) {
+		data.model *= m4_rotate(rotation, v3(0, 0, 1));
+	}
+	data.model *= m4_scale(v3(size, 1));
+	data.color = color;
+	int x = index.x * atlas.sprite_size.x + atlas.padding;
+	data.uv_min.x = x / (float)atlas.texture_size.x;
+	data.uv_max.x = data.uv_min.x + (atlas.sprite_size.x - atlas.padding) / (float)atlas.texture_size.x;
+	int y = index.y * atlas.sprite_size.y + atlas.padding;
+	data.uv_min.y = y / (float)(atlas.texture_size.y);
+	data.uv_max.y = data.uv_min.y + (atlas.sprite_size.y - atlas.padding) / (float)atlas.texture_size.y;
+	data.mix_weight = draw_data.mix_weight;
+	data.mix_color = draw_data.mix_color;
+
+	if(draw_data.flip_x) {
+		swap(&data.uv_min.x, &data.uv_max.x);
+	}
+
+	add_to_render_group(data, e_shader_billboard, atlas.texture, e_mesh_quad, render_pass_index);
+}
+
 func void draw_plane(s_v3 topleft, s_v3 topright, s_v3 bottomleft, s_v3 bottomright, s_v4 color, int render_pass_index)
 {
 	s_plane_instance data = zero;

@@ -21,7 +21,9 @@ signal
 
 	enemies
 	walls
+	fence
 	pickups
+		moving spike?
 		+ speed?
 		dash?
 		easier timing?
@@ -29,8 +31,8 @@ signal
 		X "free" actions (dont require matching the timing)
 
 
-first map: teach that we can press forward to not have to wait for the timer
-second map: teach how to switch lane
-fourth map: teach jump
-
-prevent player from going into the wall when switching side
+map 1: teach that we can press forward to not have to wait for the timer
+map 2: teach how to switch lane
+map 4: teach jump
+map 6: spikes
+map 8: ?

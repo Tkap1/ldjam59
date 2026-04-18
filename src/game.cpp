@@ -292,7 +292,7 @@ func void input()
 
 					int entity_type_arr[9] = {
 						e_editor_entity_wall, e_editor_entity_end, e_editor_entity_fence,
-						-1, -1, -1,
+						e_editor_entity_spike, -1, -1,
 						-1, -1, -1,
 					};
 					for(int i = 0; i < 9; i += 1) {
@@ -529,96 +529,135 @@ func void update()
 		if(game->in_editor) {
 		}
 		else {
-			b8 can_act = false;
-			if(soft_update_time >= soft_data->next_action_time && soft_update_time <= soft_data->next_action_time + c_action_grace_period){
-				can_act = true;
-			}
 
-			b8 wanted_to_perform_action = false;
+			b8 do_a_turn = false;
 
-			if(can_act) {
-				soft_data->draw_signal = true;
-			}
-			else {
-				soft_data->draw_signal = false;
-			}
-
-			b8 advance_next_action_time = false;
-
-			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_forward_timestamp, 0.0f)) {
-				wanted_to_perform_action = true;
-				if(can_act) {
-					soft_data->want_to_move_forward_timestamp = zero;
-					move_forward(player, false);
-					advance_next_action_time = true;
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				b8 can_act = false;
+				if(soft_update_time >= soft_data->next_action_time && soft_update_time <= soft_data->next_action_time + c_action_grace_period){
+					can_act = true;
 				}
-			}
 
-			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_left_timestamp, 0.0f)) {
-				wanted_to_perform_action = true;
+				b8 wanted_to_perform_action = false;
+
 				if(can_act) {
-					s_v2i player_tile = tile_index_from_3d(player->target_pos - v3(1, 0, 0));
-					s_entity* wall = get_wall_at_tile(player_tile);
-					soft_data->want_to_move_left_timestamp = zero;
-					advance_next_action_time = true;
-					if(!wall) {
-						s_v3 target_pos = player->target_pos;
-						target_pos.x -= 1;
-						player->target_pos = target_pos;
+					soft_data->draw_signal = true;
+				}
+				else {
+					soft_data->draw_signal = false;
+				}
+
+				b8 advance_next_action_time = false;
+
+				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_forward_timestamp, 0.0f)) {
+					wanted_to_perform_action = true;
+					if(can_act) {
+						soft_data->want_to_move_forward_timestamp = zero;
+						move_forward(player, false);
+						advance_next_action_time = true;
 					}
 				}
-			}
 
-			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_right_timestamp, 0.0f)) {
-				wanted_to_perform_action = true;
-				if(can_act) {
-					s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
-					s_entity* wall = get_wall_at_tile(player_tile);
-					soft_data->want_to_move_right_timestamp = zero;
-					advance_next_action_time = true;
-					if(!wall) {
-						s_v3 target_pos = player->target_pos;
-						target_pos.x += 1;
-						player->target_pos = target_pos;
+				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_left_timestamp, 0.0f)) {
+					wanted_to_perform_action = true;
+					if(can_act) {
+						s_v2i player_tile = tile_index_from_3d(player->target_pos - v3(1, 0, 0));
+						s_entity* wall = get_wall_at_tile(player_tile);
+						soft_data->want_to_move_left_timestamp = zero;
+						advance_next_action_time = true;
+						if(!wall) {
+							s_v3 target_pos = player->target_pos;
+							target_pos.x -= 1;
+							player->target_pos = target_pos;
+						}
 					}
 				}
-			}
 
-			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_jump_timestamp, 0.0f)) {
-				wanted_to_perform_action = true;
-				if(can_act) {
-					// s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
-					// s_entity* wall = get_wall_at_tile(player_tile);
-					soft_data->want_to_jump_timestamp = zero;
-					advance_next_action_time = true;
-					jump_forward(player);
-					player->is_jumping = maybe(soft_update_time);
-					// if(!wall) {
-					// 	s_v3 target_pos = player->target_pos;
-					// 	target_pos.x += 1;
-					// 	player->target_pos = target_pos;
-					// }
+				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_right_timestamp, 0.0f)) {
+					wanted_to_perform_action = true;
+					if(can_act) {
+						s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
+						s_entity* wall = get_wall_at_tile(player_tile);
+						soft_data->want_to_move_right_timestamp = zero;
+						advance_next_action_time = true;
+						if(!wall) {
+							s_v3 target_pos = player->target_pos;
+							target_pos.x += 1;
+							player->target_pos = target_pos;
+						}
+					}
+				}
+
+				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_jump_timestamp, 0.0f)) {
+					wanted_to_perform_action = true;
+					if(can_act) {
+						// s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
+						// s_entity* wall = get_wall_at_tile(player_tile);
+						soft_data->want_to_jump_timestamp = zero;
+						advance_next_action_time = true;
+						jump_forward(player);
+						player->is_jumping = maybe(soft_update_time);
+						// if(!wall) {
+						// 	s_v3 target_pos = player->target_pos;
+						// 	target_pos.x += 1;
+						// 	player->target_pos = target_pos;
+						// }
+					}
+				}
+
+				if(advance_next_action_time) {
+					float diff = soft_update_time - soft_data->next_action_time;
+					soft_data->next_action_time += c_action_interval + diff;
+					do_a_turn = true;
+				}
+
+				if(wanted_to_perform_action && !can_act) {
+					soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
+				}
+
+				if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
+					soft_data->next_action_time += c_action_interval + c_action_grace_period;
+					do_a_turn = true;
+					move_forward(player, true);
+				}
+
+				player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
+
+				if(check_for_win(player->target_pos) && !will_win_soon()) {
+					soft_data->win_timestamp = maybe(soft_update_time);
 				}
 			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-			if(advance_next_action_time) {
-				float diff = soft_update_time - soft_data->next_action_time;
-				soft_data->next_action_time += c_action_interval + diff;
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update pickups start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
+				s_entity* entity = &entity_arr->data[i];
+				if(entity->pickup_type == e_pickup_spike) {
+					if(float_equals(entity->dir, 0.0f)) {
+						entity->dir = 1;
+					}
+					if(do_a_turn) {
+						s_v3 new_pos = entity->target_pos;
+						new_pos.x += entity->dir;
+						s_v2i index = tile_index_from_3d(new_pos);
+						s_entity* wall = get_wall_at_tile(index);
+						if(wall) {
+							entity->dir *= -1;
+						}
+						entity->target_pos.x += entity->dir;
+					}
+					entity->pos = lerp_v3(entity->pos, entity->target_pos, delta * 10);
+				}
 			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update pickups end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-			if(wanted_to_perform_action && !can_act) {
-				soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
-			}
-
-			if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
-				soft_data->next_action_time += c_action_interval + c_action_grace_period;
-				move_forward(player, true);
-			}
-
-			player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
-
-			if(check_for_win(player->target_pos) && !will_win_soon()) {
-				soft_data->win_timestamp = maybe(soft_update_time);
+			{
+				s_v2i player_tile = tile_index_from_3d(player->target_pos);
+				s_entity* spike = get_spike_at_tile(player_tile);
+				if(spike && !will_win_soon()) {
+					start_losing(0.25f);
+				}
 			}
 		}
 
@@ -628,7 +667,7 @@ func void update()
 	}
 
 	if(!will_win_soon()) {
-		s_time_data data = get_time_data_maybe(soft_update_time, soft_data->lose_timestamp, c_action_interval * 1.1f);
+		s_time_data data = get_time_data_maybe(soft_update_time, soft_data->lose_timestamp, soft_data->lose_delay);
 		if(data.percent >= 1) {
 			game->do_soft_reset = true;
 		}
@@ -978,6 +1017,10 @@ func void render(float interp_dt, float delta)
 						xcase e_editor_entity_end: {
 							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_end);
 						}
+
+						xcase e_editor_entity_spike: {
+							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_spike);
+						}
 					}
 				}
 			}
@@ -1056,9 +1099,22 @@ func void render(float interp_dt, float delta)
 						continue;
 					}
 					s_entity entity = entity_arr->data[i];
-					s_v3 pos = entity.pos;
-					pos.y += 0.5f;
-					draw_mesh(e_mesh_sphere, pos, v3(0.5f), make_rgb(0, 1, 0), e_shader_mesh, 0);
+					switch(entity.pickup_type) {
+						xcase e_pickup_end: {
+							s_v3 pos = entity.pos;
+							pos.y += 0.5f;
+							draw_mesh(e_mesh_sphere, pos, v3(0.5f), make_rgb(0, 1, 0), e_shader_mesh, 0);
+						}
+						xcase e_pickup_spike: {
+							s_v3 pos = lerp_v3(entity.prev_pos, entity.pos, interp_dt);
+							pos.y += 0.25f;
+							float rotation = game->render_time;
+							if(entity.dir > 0) {
+								rotation = -game->render_time;
+							}
+							draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(5, 0), make_rrr(1), rotation * 4, zero, 0);
+						}
+					}
 				}
 
 				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
@@ -1660,7 +1716,7 @@ func void load_map(int index)
 	game->editor.map = *map;
 	#endif
 
-	for(int y = 0; y < c_map_height; y += 1) {
+	for(int y = 0; y < 32; y += 1) {
 		for(int x = 0; x < c_map_width; x += 1) {
 			if(map->active[y][x]) {
 				s_editor_entity editor_entity = map->entity_arr[y][x];
@@ -1671,7 +1727,9 @@ func void load_map(int index)
 				else if(editor_entity.type == e_entity_wall) {
 					entity.is_fence = editor_entity.sub_type == 1;
 				}
-				teleport_entity(&entity, v3(x, 0.0f, -y));
+				s_v3 pos = v3(x, 0.0f, -y);
+				entity.target_pos = pos;
+				teleport_entity(&entity, pos);
 				entity_manager_add(&game->soft_data.entity_arr, editor_entity.type, entity);
 			}
 		}
@@ -1711,7 +1769,14 @@ func void draw_entity_2d(s_editor_entity entity, int x, int y)
 		xcase e_entity_pickup: {
 			s_v2 pos = base_pos;
 			pos += c_tile_size_v * 0.5f;
-			draw_atlas(game->atlas, pos, c_tile_size_v, v2i(2, 0), make_rrr(1), 0);
+			switch(entity.sub_type) {
+				xcase e_pickup_end: {
+					draw_atlas(game->atlas, pos, c_tile_size_v, v2i(2, 0), make_rrr(1), 0);
+				}
+				xcase e_pickup_spike: {
+					draw_atlas(game->atlas, pos, c_tile_size_v, v2i(5, 0), make_rrr(1), 0);
+				}
+			}
 		}
 	}
 }
@@ -1742,8 +1807,11 @@ func s_entity* get_end()
 		if(!game->soft_data.entity_arr.active[i]) {
 			continue;
 		}
-		result = &game->soft_data.entity_arr.data[i];
-		break;
+		s_entity* entity = &game->soft_data.entity_arr.data[i];
+		if(entity->pickup_type == e_pickup_end) {
+			result = entity;
+			break;
+		}
 	}
 	return result;
 }
@@ -1778,6 +1846,31 @@ func s_entity* get_wall_at_tile(s_v2i index)
 	return result;
 }
 
+func s_entity* get_spike_at_tile(s_v2i index)
+{
+	s_entity* result = get_pickup_at_tile(index, e_pickup_spike);
+	return result;
+}
+
+func s_entity* get_pickup_at_tile(s_v2i index, e_pickup pickup_type)
+{
+	s_entity* result = null;
+	for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
+		if(!game->soft_data.entity_arr.active[i]) {
+			continue;
+		}
+		s_entity* entity = &game->soft_data.entity_arr.data[i];
+		if(entity->pickup_type == pickup_type) {
+			s_v2i temp = tile_index_from_3d(entity->target_pos);
+			if(index == temp) {
+				result = entity;
+				break;
+			}
+		}
+	}
+	return result;
+}
+
 func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you)
 {
 	s_entity* wall = null;
@@ -1793,8 +1886,7 @@ func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you)
 	}
 
 	if(does_walking_into_wall_kill_you && wall) {
-		float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
-		game->soft_data.lose_timestamp = maybe(soft_update_time);
+		start_losing(c_action_interval * 1.1f);
 	}
 }
 
@@ -1823,8 +1915,8 @@ func void jump_forward(s_entity* player)
 			player->target_pos = target_pos;
 		}
 		else {
-			float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
-			game->soft_data.lose_timestamp = maybe(soft_update_time);
+			start_losing(c_action_interval * 1.1f);
+			break;
 		}
 	}
 }
@@ -1853,4 +1945,13 @@ func b8 will_lose_soon()
 {
 	b8 result = game->soft_data.lose_timestamp.valid;
 	return result;
+}
+
+func void start_losing(float delay)
+{
+	if(!will_lose_soon()) {
+		float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
+		game->soft_data.lose_timestamp = maybe(soft_update_time);
+		game->soft_data.lose_delay = delay;
+	}
 }

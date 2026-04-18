@@ -5,9 +5,9 @@ global constexpr s_v2 c_player_size = {0.2f, 0.5f};
 global constexpr float c_action_interval = 0.25f;
 global constexpr float c_action_grace_period = 0.5f;
 global constexpr int c_map_width = 5;
-global constexpr int c_map_height = 32;
+global constexpr int c_map_height = 128;
 global constexpr int c_map_version = 1;
-global constexpr int c_map_count = 4;
+global constexpr int c_map_count = 10;
 
 #if defined(__EMSCRIPTEN__)
 
@@ -171,6 +171,7 @@ enum e_button_result
 enum e_pickup
 {
 	e_pickup_end,
+	e_pickup_spike,
 };
 
 struct s_entity
@@ -182,11 +183,11 @@ struct s_entity
 	s_v3 prev_pos;
 	float spawn_timestamp;
 	float duration;
+	s_v3 target_pos;
 	union {
 
 		// @Note(tkap, 04/10/2025): Player
 		struct {
-			s_v3 target_pos;
 			s_maybe<float> is_jumping;
 		};
 
@@ -209,6 +210,7 @@ struct s_entity
 		// @Note(tkap, 31/07/2025): Pickup
 		struct {
 			e_pickup pickup_type;
+			float dir;
 		};
 	};
 };
@@ -264,6 +266,7 @@ struct s_soft_game_data
 	float next_action_time;
 	s_maybe<float> win_timestamp;
 	s_maybe<float> lose_timestamp;
+	float lose_delay;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;
 };
@@ -302,6 +305,7 @@ enum e_editor_entity
 	e_editor_entity_wall,
 	e_editor_entity_end,
 	e_editor_entity_fence,
+	e_editor_entity_spike,
 };
 
 struct s_editor
