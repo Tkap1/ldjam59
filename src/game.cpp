@@ -327,13 +327,14 @@ func void input()
 						}
 					}
 					else if(scancode == SDL_SCANCODE_SPACE && !is_repeat) {
+						soft_data->want_to_jump_timestamp = maybe(soft_update_time);
 					}
 					else if(scancode == SDL_SCANCODE_W) {
 						if(game->in_editor) {
 							game->editor.cam_pos.y -= 20;
 						}
 						else if(!is_repeat) {
-							soft_data->want_to_move_timestamp = maybe(soft_update_time);
+							soft_data->want_to_move_forward_timestamp = maybe(soft_update_time);
 						}
 					}
 					else if(scancode == SDL_SCANCODE_S) {
@@ -519,10 +520,11 @@ func void update()
 		return;
 	}
 
+	float soft_update_time = soft_data->update_count * (float)c_update_delay;
+
 	if(should_do_game) {
 
 		s_entity* player = &entity_arr->data[0];
-		float soft_update_time = soft_data->update_count * (float)c_update_delay;
 
 		if(game->in_editor) {
 		}
@@ -543,18 +545,16 @@ func void update()
 
 			b8 advance_next_action_time = false;
 
-			if(check_action_maybe(soft_update_time, soft_data->want_to_move_timestamp, 0.0f)) {
+			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_forward_timestamp, 0.0f)) {
 				wanted_to_perform_action = true;
 				if(can_act) {
-					soft_data->want_to_move_timestamp = zero;
-					s_v3 target_pos = player->target_pos;
-					target_pos.z -= 1;
-					player->target_pos = target_pos;
+					soft_data->want_to_move_forward_timestamp = zero;
+					move_forward(player, false);
 					advance_next_action_time = true;
 				}
 			}
 
-			if(check_action_maybe(soft_update_time, soft_data->want_to_move_left_timestamp, 0.0f)) {
+			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_left_timestamp, 0.0f)) {
 				wanted_to_perform_action = true;
 				if(can_act) {
 					s_v2i player_tile = tile_index_from_3d(player->target_pos - v3(1, 0, 0));
@@ -569,7 +569,7 @@ func void update()
 				}
 			}
 
-			if(check_action_maybe(soft_update_time, soft_data->want_to_move_right_timestamp, 0.0f)) {
+			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_right_timestamp, 0.0f)) {
 				wanted_to_perform_action = true;
 				if(can_act) {
 					s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
@@ -584,6 +584,24 @@ func void update()
 				}
 			}
 
+			if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_jump_timestamp, 0.0f)) {
+				wanted_to_perform_action = true;
+				if(can_act) {
+					// s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
+					// s_entity* wall = get_wall_at_tile(player_tile);
+					soft_data->want_to_jump_timestamp = zero;
+					advance_next_action_time = true;
+					move_forward(player, true);
+					move_forward(player, true);
+					player->is_jumping = maybe(soft_update_time);
+					// if(!wall) {
+					// 	s_v3 target_pos = player->target_pos;
+					// 	target_pos.x += 1;
+					// 	player->target_pos = target_pos;
+					// }
+				}
+			}
+
 			if(advance_next_action_time) {
 				float diff = soft_update_time - soft_data->next_action_time;
 				soft_data->next_action_time += c_action_interval + diff;
@@ -595,29 +613,34 @@ func void update()
 
 			if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
 				soft_data->next_action_time += c_action_interval + c_action_grace_period;
+				move_forward(player, true);
 			}
 
 			player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
 
-			{
-				int player_index = tile_index_1d_from_3d(player->target_pos);
-				s_entity* end = get_end();
-				if(end) {
-					int end_index = tile_index_1d_from_3d(end->pos);
-					if(player_index == end_index) {
-						hard_data->current_map += 1;
-
-						if(hard_data->current_map < c_map_count) {
-							game->do_soft_reset = true;
-						}
-					}
-				}
+			if(check_for_win(player->target_pos) && !will_win_soon()) {
+				soft_data->win_timestamp = maybe(soft_update_time);
 			}
 		}
 
 		game->update_time += (float)c_update_delay;
 		hard_data->update_count += 1;
 		soft_data->update_count += 1;
+	}
+
+	if(!will_win_soon()) {
+		s_time_data data = get_time_data_maybe(soft_update_time, soft_data->lose_timestamp, c_action_interval * 1.1f);
+		if(data.percent >= 1) {
+			game->do_soft_reset = true;
+		}
+	}
+
+	{
+		s_time_data data = get_time_data_maybe(soft_update_time, soft_data->win_timestamp, c_action_interval * 1.1f);
+		if(data.percent >= 1) {
+			hard_data->current_map += 1;
+			game->do_soft_reset = true;
+		}
 	}
 
 	if(hard_data->current_map >= c_map_count) {
@@ -646,6 +669,8 @@ func void render(float interp_dt, float delta)
 	// s_hard_game_data* hard_data = &game->hard_data;
 	s_soft_game_data* soft_data = &game->soft_data;
 	auto entity_arr = &soft_data->entity_arr;
+
+	float soft_update_time = soft_data->update_count * (float)c_update_delay;
 
 	s_entity player = entity_arr->data[0];
 	s_v3 player_pos = lerp_v3(player.prev_pos, player.pos, interp_dt);
@@ -995,7 +1020,17 @@ func void render(float interp_dt, float delta)
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw ground end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			{
-				draw_rect_3d(player_pos, c_player_size, make_rrr(0.7f), 0);
+				{
+					s_v3 pos = player_pos;
+					if(player.is_jumping.valid) {
+						float passed = update_time_to_render_time(soft_update_time, interp_dt) - player.is_jumping.value;
+						pos.y += sinf(passed / c_action_interval * c_pi);
+						if(passed >= c_action_interval) {
+							get_player()->is_jumping = zero;
+						}
+					}
+					draw_rect_3d(pos, c_player_size, make_rrr(0.7f), 0);
+				}
 
 				for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
 					if(!entity_arr->active[i]) {
@@ -1565,12 +1600,12 @@ func void maybe_load_map(int index)
 	game->editor.what_to_save_or_load = index;
 	game->editor.save_or_load_state += 1;
 	if(game->editor.save_or_load_state == 2) {
-		printf("LOADED MAP %i\n", index);
+		printf("LOADED MAP %i\n", index + 1);
 		game->editor.save_or_load_state = 0;
 		load_map(index);
 	}
 	else {
-		printf("LOAD MAP %i? ARE YOU SURE?\n", index);
+		printf("LOAD MAP %i? ARE YOU SURE?\n", index + 1);
 	}
 }
 
@@ -1583,12 +1618,12 @@ func void maybe_save_map(int index)
 	game->editor.what_to_save_or_load = index;
 	game->editor.save_or_load_state += 1;
 	if(game->editor.save_or_load_state == 2) {
-		printf("SAVED MAP %i\n", index);
+		printf("SAVED MAP %i\n", index + 1);
 		game->editor.save_or_load_state = 0;
 		save_map(index);
 	}
 	else {
-		printf("SAVE MAP %i? ARE YOU SURE?\n", index);
+		printf("SAVE MAP %i? ARE YOU SURE?\n", index + 1);
 	}
 }
 
@@ -1723,5 +1758,51 @@ func s_entity* get_wall_at_tile(s_v2i index)
 			break;
 		}
 	}
+	return result;
+}
+
+func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you)
+{
+	s_entity* wall = null;
+	{
+		s_v2i player_tile = tile_index_from_3d(player->target_pos - v3(0, 0, 1));
+		wall = get_wall_at_tile(player_tile);
+	}
+
+	if(!wall) {
+		s_v3 target_pos = player->target_pos;
+		target_pos.z -= 1;
+		player->target_pos = target_pos;
+	}
+
+	if(does_walking_into_wall_kill_you && wall) {
+		float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
+		game->soft_data.lose_timestamp = maybe(soft_update_time);
+	}
+}
+
+func b8 check_for_win(s_v3 pos)
+{
+	b8 result = false;
+	int player_index = tile_index_1d_from_3d(pos);
+	s_entity* end = get_end();
+	if(end) {
+		int end_index = tile_index_1d_from_3d(end->pos);
+		if(player_index == end_index) {
+			result = true;
+		}
+	}
+	return result;
+}
+
+func b8 will_win_soon()
+{
+	b8 result = game->soft_data.win_timestamp.valid;
+	return result;
+}
+
+func b8 will_lose_soon()
+{
+	b8 result = game->soft_data.lose_timestamp.valid;
 	return result;
 }

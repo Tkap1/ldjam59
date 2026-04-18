@@ -2064,3 +2064,23 @@ func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv
 	data.depth_mode = e_depth_mode_no_read_no_write;
 	render_flush(data, true, render_pass_index);
 }
+
+func s_v3 compute_initial_velocity(s_v3 start_pos, s_v3 target_pos, float total_time, float gravity)
+{
+	s_v3 result;
+
+	result.x = (target_pos.x - start_pos.x) / total_time;
+	result.y = (target_pos.y - start_pos.y) / total_time;
+	result.z = (target_pos.z - start_pos.z + 0.5f * gravity * total_time * total_time) / total_time;
+
+	return result;
+}
+
+func s_time_data get_time_data_maybe(float curr, s_maybe<float> timestamp, float duration)
+{
+	s_time_data result = zero;
+	if(timestamp.valid) {
+		result = get_time_data(curr, timestamp.value, duration);
+	}
+	return result;
+}

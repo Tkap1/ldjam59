@@ -100,6 +100,8 @@ func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena
 func s_active_sound* find_playing_sound(e_sound id);
 func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
 func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv);
+func s_v3 compute_initial_velocity(s_v3 start_pos, s_v3 target_pos, float total_time, float gravity);
+func s_time_data get_time_data_maybe(float curr, s_maybe<float> timestamp, float duration);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif

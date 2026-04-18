@@ -29,7 +29,8 @@ signal
 		X "free" actions (dont require matching the timing)
 
 
-first map: teach how to move
-second map: teach how to switch lane?
+first map: teach that we can press forward to not have to wait for the timer
+second map: teach how to switch lane
+fourth map: teach jump
 
 prevent player from going into the wall when switching side

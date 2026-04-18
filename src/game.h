@@ -2,12 +2,12 @@
 #include "gen_meta/game.h.enums"
 
 global constexpr s_v2 c_player_size = {0.2f, 0.5f};
-global constexpr float c_action_interval = 0.5f;
+global constexpr float c_action_interval = 0.25f;
 global constexpr float c_action_grace_period = 0.5f;
 global constexpr int c_map_width = 5;
 global constexpr int c_map_height = 32;
 global constexpr int c_map_version = 1;
-global constexpr int c_map_count = 2;
+global constexpr int c_map_count = 4;
 
 #if defined(__EMSCRIPTEN__)
 
@@ -187,7 +187,7 @@ struct s_entity
 		// @Note(tkap, 04/10/2025): Player
 		struct {
 			s_v3 target_pos;
-			b8 on_ground;
+			s_maybe<float> is_jumping;
 		};
 
 		// @Note(tkap, 31/07/2025): Emitter
@@ -249,13 +249,16 @@ struct s_soft_game_data
 
 	s_entity_manager<s_entity, c_max_entities> entity_arr;
 
-	s_maybe<float> want_to_move_timestamp;
+	s_maybe<float> want_to_move_forward_timestamp;
 	s_maybe<float> want_to_move_left_timestamp;
 	s_maybe<float> want_to_move_right_timestamp;
+	s_maybe<float> want_to_jump_timestamp;
 	s_maybe<float> last_action_success_timestamp;
 	s_maybe<float> last_action_timestamp;
 	b8 draw_signal;
 	float next_action_time;
+	s_maybe<float> win_timestamp;
+	s_maybe<float> lose_timestamp;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;
 };
