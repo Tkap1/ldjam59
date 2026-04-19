@@ -632,6 +632,7 @@ func void update()
 					wanted_to_perform_action = true;
 					if(can_act) {
 						soft_data->want_to_jump_timestamp = zero;
+						play_sound_at_speed(e_sound_jump, get_rand_sound_speed(1.1f, &game->rng));
 						advance_next_action_time = true;
 						jump_forward(player);
 						player->is_jumping = maybe(soft_update_time);
@@ -1219,6 +1220,7 @@ func void render(float interp_dt, float delta)
 						pos.y += sinf(passed / c_action_interval * c_pi);
 						if(passed >= c_action_interval) {
 							get_player()->is_jumping = zero;
+							play_sound_at_speed(e_sound_landing, get_rand_sound_speed(1.1f, &game->rng));
 						}
 					}
 					s_v2 size = c_player_size * 1.5f;

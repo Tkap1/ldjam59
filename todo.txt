@@ -33,6 +33,5 @@ miss action sound
 sword image? model?
 lil slash billboard on enemy when kill?
 
-fix fence
-
 die when W'ing into a fence
+get lower ground mesh from aqtun
