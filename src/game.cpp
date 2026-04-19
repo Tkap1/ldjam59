@@ -639,6 +639,8 @@ func void update()
 					}
 				}
 
+				b8 refresh_action = false;
+
 				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_attack_timestamp, 0.0f)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
@@ -648,6 +650,7 @@ func void update()
 						soft_data->last_attack_timestamp = maybe(game->render_time);
 						if(enemy.valid) {
 							kill_enemy(enemy.value);
+							refresh_action = true;
 							play_sound_at_speed(rand_bool(&game->rng) ? e_sound_kill1 : e_sound_kill2, get_rand_sound_speed(1.1f, &game->rng));
 						}
 						else {
@@ -670,6 +673,10 @@ func void update()
 					soft_data->next_action_time += c_action_interval + c_action_grace_period;
 					do_a_turn = true;
 					move_forward(player, true);
+				}
+
+				if(refresh_action) {
+					soft_data->next_action_time = soft_update_time - (float)c_update_delay;
 				}
 
 				player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
