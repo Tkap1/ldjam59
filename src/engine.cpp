@@ -1329,7 +1329,6 @@ func void engine_init(s_platform_data* platform_data)
 	{
 		game->mesh_arr[e_mesh_cube] = make_mesh_from_obj_file("assets/cube.obj", &game->render_frame_arena);
 		game->mesh_arr[e_mesh_sphere] = make_mesh_from_obj_file("assets/sphere.obj", &game->render_frame_arena);
-		game->mesh_arr[e_mesh_aqtun] = make_mesh_from_obj_file("assets/aqtun.obj", &game->render_frame_arena);
 	}
 
 	{

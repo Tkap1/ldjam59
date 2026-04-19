@@ -12,7 +12,6 @@ enum e_mesh
 	e_mesh_sphere,
 	e_mesh_line,
 	e_mesh_plane,
-	e_mesh_aqtun,
 	e_mesh_count,
 };
 

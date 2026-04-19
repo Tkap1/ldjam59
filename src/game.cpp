@@ -1263,6 +1263,12 @@ func void render(float interp_dt, float delta)
 							animation_time[i] += delta * 10;
 							s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
 							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), -game->render_time * 2.5f, zero, 0);
+
+							{
+								s_entity emitter = make_end_particles(pos);
+								add_emitter(emitter);
+							}
+
 						}
 						xcase e_pickup_spike: {
 							s_v3 pos = lerp_v3(entity.prev_pos, entity.pos, interp_dt);
@@ -1285,6 +1291,9 @@ func void render(float interp_dt, float delta)
 							s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
 
 							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, 0);
+
+							s_entity emitter = make_end_particles(pos);
+							add_emitter(emitter);
 						}
 					}
 				}
@@ -1324,6 +1333,17 @@ func void render(float interp_dt, float delta)
 			}
 
 			{
+				update_particles(delta, true, 0);
+				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.fbo = game->game_fbo;
+				data.view = view_3d;
+				data.projection = perspective;
+				data.blend_mode = e_blend_mode_additive;
+				data.depth_mode = e_depth_mode_read_no_write;
+				render_flush(data, true, 0);
+			}
+
+			{
 				float transition_time = get_transition_percent(game->render_time, hard_data->map_win_transition);
 				e_shader shader = e_shader_flat;
 				if(hard_data->map_win_transition.active) {
@@ -1347,7 +1367,6 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true, 0);
 			}
 		}
-
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		#if 0
@@ -2204,4 +2223,28 @@ func float get_transition_percent(float time_now, s_transition t)
 		result = at_most(1.0f, result);
 	}
 	return result;
+}
+
+func s_entity make_end_particles(s_v3 pos)
+{
+	s_particle_emitter_a a = make_emitter_a();
+	a.radius = 0.02f;
+	a.speed = 0.25f;
+	a.particle_duration = 1.0f;
+	a.radius_rand = 0.5f;
+	a.speed_rand = 0.5f;
+	a.particle_duration_rand = 0.5f;
+	a.dir = v3(1, 1, 1);
+	a.dir_rand = v3(1, 1, 1);
+	a.color_arr[0].color = make_rgb(0.815f * 0.25f, 0.854f, 0.568f * 0.25f);
+	a.pos = pos;
+	s_particle_emitter_b b = make_emitter_b();
+	b.spawn_type = e_emitter_spawn_type_circle;
+	b.spawn_data.x = 0.5f;
+	b.particle_count = 10;
+
+	s_entity emitter = zero;
+	emitter.emitter_a = a;
+	emitter.emitter_b = b;
+	return emitter;
 }
