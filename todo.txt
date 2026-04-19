@@ -34,3 +34,5 @@ sword image? model?
 lil slash billboard on enemy when kill?
 
 fix fence
+
+die when W'ing into a fence

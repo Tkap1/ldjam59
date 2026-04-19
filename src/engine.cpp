@@ -1347,6 +1347,7 @@ func void engine_init(s_platform_data* platform_data)
 		game->mesh_arr[e_mesh_aqtun_empty] = make_mesh_from_obj_file("assets/empty.obj", &game->render_frame_arena);
 		game->mesh_arr[e_mesh_aqtun_full] = make_mesh_from_obj_file("assets/full.obj", &game->render_frame_arena);
 		game->mesh_arr[e_mesh_aqtun_lshape] = make_mesh_from_obj_file("assets/lshape.obj", &game->render_frame_arena);
+		game->mesh_arr[e_mesh_aqtun_spikes] = make_mesh_from_obj_file("assets/spikes.obj", &game->render_frame_arena);
 	}
 
 	{

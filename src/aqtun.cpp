@@ -63,15 +63,32 @@ func s_tile_visual get_tile_index(s_map* map, int x, int y)
 		do_y_check = false;
 	}
 
-	bool top_left_check     = do_x_check &&                 map->active[y    ][x - 1] && map->entity_arr[y    ][x - 1].type == e_entity_wall;
-	bool top_right_check    = do_base_check &&              map->active[y    ][x    ] && map->entity_arr[y    ][x    ].type == e_entity_wall;
-	bool bottom_right_check = (do_base_check && do_y_check) &&                 map->active[y - 1][x    ] && map->entity_arr[y - 1][x    ].type == e_entity_wall;
-	bool bottom_left_check  = (do_x_check && do_y_check) && map->active[y - 1][x - 1] && map->entity_arr[y - 1][x - 1].type == e_entity_wall;
+	s_v2i offset_arr[4] = {
+		v2i(x - 1, y),
+		v2i(x, y),
+		v2i(x, y - 1),
+		v2i(x - 1, y - 1),
+	};
+	b8 do_arr[4] = {
+		do_x_check,
+		do_base_check,
+		do_base_check && do_y_check,
+		do_x_check && do_y_check
+	};
 
-	if (top_left_check)     result.tile_index |= c_dualgrid_tile_top_left;
-	if (top_right_check)    result.tile_index |= c_dualgrid_tile_top_right;
-	if (bottom_right_check) result.tile_index |= c_dualgrid_tile_bottom_right;
-	if (bottom_left_check)  result.tile_index |= c_dualgrid_tile_bottom_left;
+	b8 check_arr[4] = zero;
+
+	for(int i = 0; i < 4; i += 1) {
+		if(do_arr[i]) {
+			s_v2i index = offset_arr[i];
+			check_arr[i] = map->active[index.y][index.x] && map->entity_arr[index.y][index.x].type == e_entity_wall && !map->entity_arr[index.y][index.x].sub_type == 1;
+		}
+	}
+
+	if (check_arr[0])     result.tile_index |= c_dualgrid_tile_top_left;
+	if (check_arr[1])    result.tile_index |= c_dualgrid_tile_top_right;
+	if (check_arr[2]) result.tile_index |= c_dualgrid_tile_bottom_right;
+	if (check_arr[3])  result.tile_index |= c_dualgrid_tile_bottom_left;
 
 	result = find_dominant_tile(result);
 

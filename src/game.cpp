@@ -1261,23 +1261,21 @@ func void render(float interp_dt, float delta)
 					}
 				}
 
-				// // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw wall start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-				// for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
-				// 	if(!entity_arr->active[i]) {
-				// 		continue;
-				// 	}
-				// 	s_entity entity = entity_arr->data[i];
-				// 	s_v3 size = v3(1, 1, 1);
-				// 	s_v4 color = make_rrr(1);
-				// 	if(entity.is_fence) {
-				// 		size.y *= 0.5f;
-				// 		color = make_rgb(1, 0.8f, 0.8f);
-				// 	}
-				// 	s_v3 pos = entity.pos;
-				// 	pos.y += size.y * 0.5f;
-				// 	draw_mesh(e_mesh_cube, pos, size, color, e_shader_mesh, 0);
-				// }
-				// // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw wall end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw wall start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+				for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
+					if(!entity_arr->active[i]) {
+						continue;
+					}
+					s_entity entity = entity_arr->data[i];
+					if(entity.is_fence) {
+						s_v3 size = v3(1, 1, 1);
+						s_v4 color = make_rrr(1);
+						color = make_rgb(1, 0.8f, 0.8f);
+						s_v3 pos = entity.pos;
+						draw_mesh(e_mesh_aqtun_spikes, pos, size, color, e_shader_mesh, 0);
+					}
+				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw wall end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw pickups start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
@@ -2444,6 +2442,5 @@ func s_v2i get_enemy_animation_frame(float time)
 		v2i(0, 1), v2i(1, 1), v2i(2, 1),
 	};
 	s_v2i result = c_frame_arr[floorfi(time) % array_count(c_frame_arr)];
-	result = c_frame_arr[0];
 	return result;
 }

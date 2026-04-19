@@ -18,6 +18,7 @@ enum e_mesh
 	e_mesh_aqtun_empty,
 	e_mesh_aqtun_full,
 	e_mesh_aqtun_lshape,
+	e_mesh_aqtun_spikes,
 	e_mesh_count,
 };
 
