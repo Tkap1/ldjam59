@@ -1029,12 +1029,23 @@ func s_v4 get_particle_color(s_rng* rng, float percent, s_list<s_particle_color,
 	return result;
 }
 
-func void play_sound(e_sound sound_id, s_play_sound_data data)
+func void play_sound_ex(e_sound sound_id, s_play_sound_data data)
 {
 	if(!game->turn_off_all_sounds) {
 		g_platform_data->play_sound(sound_id, data);
 	}
 }
+
+func void play_sound(e_sound sound_id)
+{
+	play_sound_ex(sound_id, zero);
+}
+
+func void play_sound_at_speed(e_sound sound_id, float speed)
+{
+	play_sound_ex(sound_id, {.speed = speed});
+}
+
 
 func void timer_activate(s_timer* timer, float time_now)
 {

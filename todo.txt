@@ -26,3 +26,9 @@ instead of "NOW" display a green light when you can act, red when not?
 JUICE
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
+
+death sound
+walk sound?
+switch lane sound?
+enemy death particles
+enemy death animation

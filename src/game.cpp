@@ -645,6 +645,10 @@ func void update()
 						s_maybe<int> enemy = get_closest_enemy_in_attack_range(player->pos);
 						if(enemy.valid) {
 							kill_enemy(enemy.value);
+							play_sound_at_speed(rand_bool(&game->rng) ? e_sound_kill1 : e_sound_kill2, get_rand_sound_speed(1.1f, &game->rng));
+						}
+						else {
+							play_sound(e_sound_fail_attack);
 						}
 					}
 				}
@@ -669,6 +673,7 @@ func void update()
 
 				if(check_for_win(player->target_pos) && !will_win_soon()) {
 					soft_data->win_timestamp = maybe(soft_update_time);
+					play_sound(e_sound_beat_level);
 					{
 						s_transition t = zero;
 						t.active = true;
@@ -998,7 +1003,7 @@ func void render(float interp_dt, float delta)
 		b8 submitted = handle_string_input(&state->name, game->render_time);
 		int count_after = state->name.str.count;
 		if(count_before != count_after) {
-			play_sound(e_sound_key, zero);
+			play_sound(e_sound_key);
 		}
 		if(submitted) {
 			b8 can_submit = true;
@@ -1572,7 +1577,7 @@ func e_button_result do_button_ex(s_len_str text, s_v2 pos, s_v2 size, b8 center
 			if(g_left_click) {
 				result = e_button_result_left_click;
 				if(!optional.mute_click_sound) {
-					play_sound(e_sound_click, zero);
+					play_sound(e_sound_click);
 				}
 			}
 		}

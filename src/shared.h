@@ -26,6 +26,10 @@ enum e_sound
 {
 	e_sound_click,
 	e_sound_key,
+	e_sound_beat_level,
+	e_sound_fail_attack,
+	e_sound_kill1,
+	e_sound_kill2,
 	e_sound_count,
 };
 
@@ -38,6 +42,10 @@ struct s_sound_data
 global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/click.wav", 0.2f},
 	{"assets/key.wav", 0.2f},
+	{"assets/beat_level.wav", 0.4f},
+	{"assets/fail_attack.wav", 0.2f},
+	{"assets/kill1.wav", 0.2f},
+	{"assets/kill2.wav", 0.2f},
 };
 
 struct s_active_sound
