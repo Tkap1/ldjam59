@@ -7,6 +7,7 @@ enum e_entity
 	e_entity_wall,
 	e_entity_enemy,
 	e_entity_pickup,
+	e_entity_dying_enemy,
 	e_entity_count,
 };
 

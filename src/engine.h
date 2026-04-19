@@ -422,6 +422,9 @@ data_enum(e_entity,
 	pickup {
 		.max_count = 512,
 	}
+	dying_enemy {
+		.max_count = 512,
+	}
 )
 
 struct s_entity_type_data
@@ -494,6 +497,7 @@ global constexpr int c_first_index[e_entity_count] = {
 	get_first_index(e_entity_wall),
 	get_first_index(e_entity_enemy),
 	get_first_index(e_entity_pickup),
+	get_first_index(e_entity_dying_enemy),
 };
 
 global constexpr int c_last_index_plus_one[e_entity_count] = {
@@ -504,6 +508,7 @@ global constexpr int c_last_index_plus_one[e_entity_count] = {
 	get_last_index_plus_one(e_entity_wall),
 	get_last_index_plus_one(e_entity_enemy),
 	get_last_index_plus_one(e_entity_pickup),
+	get_last_index_plus_one(e_entity_dying_enemy),
 };
 
 func s_len_str format_text2(const char* text, ...);

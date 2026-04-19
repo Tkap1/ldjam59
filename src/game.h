@@ -7,11 +7,12 @@ global constexpr float c_action_grace_period = 0.5f;
 global constexpr int c_map_width = 5;
 global constexpr int c_map_height = 128;
 global constexpr int c_map_version = 1;
-global constexpr int c_map_count = 10;
+global constexpr int c_map_count = 11;
 global constexpr float c_player_range = 1;
 global constexpr float c_enemy_range = 0.2f;
 global constexpr float c_teleport_cooldown = 1.0f;
 global constexpr float c_win_transition_duration = c_action_interval * 2;
+global constexpr s_v2 c_enemy_size = {0.5f, 0.5f};
 
 #if defined(__EMSCRIPTEN__)
 
@@ -189,11 +190,17 @@ struct s_entity
 	float spawn_timestamp;
 	float duration;
 	s_v3 target_pos;
+	s_v3 dir;
 	union {
 
 		// @Note(tkap, 04/10/2025): Player
 		struct {
 			s_maybe<float> is_jumping;
+		};
+
+		// @Note(tkap, 04/10/2025): Enemy
+		struct {
+			float animation_time;
 		};
 
 		// @Note(tkap, 04/10/2025): Wall
@@ -215,8 +222,17 @@ struct s_entity
 		// @Note(tkap, 31/07/2025): Pickup
 		struct {
 			e_pickup pickup_type;
-			float dir;
 			s_maybe<float> last_teleport_timestamp;
+		};
+
+		// @Note(tkap, 31/07/2025): Dying enemy
+		struct {
+			s_v2 size;
+			float gravity;
+			u64 seed;
+			s_v2 uv_min;
+			s_v2 uv_max;
+			s_v2i animation_frame;
 		};
 	};
 };

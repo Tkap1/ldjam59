@@ -692,18 +692,18 @@ func void update()
 				}
 				s_entity* entity = &entity_arr->data[i];
 				if(entity->pickup_type == e_pickup_spike) {
-					if(float_equals(entity->dir, 0.0f)) {
-						entity->dir = 1;
+					if(float_equals(entity->dir.x, 0.0f)) {
+						entity->dir.x = 1;
 					}
 					if(do_a_turn) {
 						s_v3 new_pos = entity->target_pos;
-						new_pos.x += entity->dir;
+						new_pos.x += entity->dir.x;
 						s_v2i index = tile_index_from_3d(new_pos);
 						s_entity* wall = get_wall_at_tile(index);
 						if(wall) {
-							entity->dir *= -1;
+							entity->dir.x *= -1;
 						}
-						entity->target_pos.x += entity->dir;
+						entity->target_pos.x += entity->dir.x;
 					}
 					entity->pos = lerp_v3(entity->pos, entity->target_pos, delta * 10);
 				}
@@ -1279,7 +1279,7 @@ func void render(float interp_dt, float delta)
 							s_v3 pos = lerp_v3(entity.prev_pos, entity.pos, interp_dt);
 							pos.y += 0.25f;
 							float rotation = game->render_time;
-							if(entity.dir > 0) {
+							if(entity.dir.x > 0) {
 								rotation = -game->render_time;
 							}
 							draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(5, 0), make_rrr(1), rotation * 4, zero, 0);
@@ -1314,32 +1314,84 @@ func void render(float interp_dt, float delta)
 					if(!entity_arr->active[i]) {
 						continue;
 					}
-					s_entity entity = entity_arr->data[i];
-					s_v3 pos = lerp_v3(entity.prev_pos, entity.pos, interp_dt);
-					pos.y += 0.25f;
+					s_entity* entity = &entity_arr->data[i];
+					s_v3 pos = lerp_v3(entity->prev_pos, entity->pos, interp_dt);
+					pos.y += c_enemy_size.y * 0.5f;
 					s_v4 color = make_rrr(0.7f);
-					if(v3_distance(player.pos, entity.pos) <= c_player_range) {
+					if(v3_distance(player.pos, entity->pos) <= c_player_range) {
 						color = make_rrr(1.5f);
 					}
 
-					s_v2i frame_arr[] = {
-						v2i(0, 1), v2i(1, 1), v2i(2, 1),
-					};
-					static float animation_time[g_entity_type_data[e_entity_enemy].max_count] = zero;
-					animation_time[i] += delta * 10;
-					s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
-
-					draw_billboard_ex(game->atlas2, pos, v2(0.5f), frame, color, c_pi, zero, 0);
+					s_v2i frame = get_enemy_animation_frame(entity->animation_time);
+					entity->animation_time += delta * 10;
+					draw_billboard_ex(game->atlas2, pos, c_enemy_size, frame, color, c_pi, zero, 0);
 				}
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-				data.fbo = game->game_fbo;
-				data.view = view_3d;
-				data.projection = perspective;
-				data.blend_mode = e_blend_mode_disabled;
-				data.depth_mode = e_depth_mode_read_and_write;
-				render_flush(data, true, 0);
+				{
+					s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+					data.fbo = game->game_fbo;
+					data.view = view_3d;
+					data.projection = perspective;
+					data.blend_mode = e_blend_mode_disabled;
+					data.depth_mode = e_depth_mode_read_and_write;
+					render_flush(data, true, 0);
+				}
+
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw dying enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+				for(int i = c_first_index[e_entity_dying_enemy]; i < c_last_index_plus_one[e_entity_dying_enemy]; i += 1) {
+					if(!entity_arr->active[i]) {
+						continue;
+					}
+					s_entity* entity = &entity_arr->data[i];
+					s_v2 size = c_enemy_size * v2(1.0f, 0.5f);
+					s_v3 pos = lerp_v3(entity->prev_pos, entity->pos, interp_dt);
+					pos.y += c_enemy_size.y * 0.5f;
+					s_v4 color = make_rrr(0.7f);
+
+					float rotation = 0;
+					b8 should_remove = false;
+					{
+						s_time_data data = get_time_data(game->render_time, entity->spawn_timestamp, 0.5f);
+						color.a = data.inv_percent;
+						s_rng rng = make_rng(entity->seed);
+						rotation = data.percent * c_pi * randf_range(&rng, 0.1f, 2.0f) * rand_minus_1_or_1(&rng);
+						if(data.percent >= 1) {
+							should_remove = true;
+						}
+					}
+
+					{
+						s_instance_data data = zero;
+						data.model = m4_translate(pos);
+						data.model = m4_multiply(data.model, m4_rotate(rotation, c_z_axis));
+						data.model = m4_multiply(data.model, m4_scale(v3(entity->size, 1)));
+						data.color = color;
+						data.uv_min = entity->uv_min;
+						data.uv_max = entity->uv_max;
+						add_to_render_group(data, e_shader_billboard, e_texture_atlas2, e_mesh_quad, 0);
+					}
+
+					entity->pos.y += entity->dir.y * delta * 0.2f;
+					entity->pos.z += entity->dir.z * delta;
+					entity->dir.y -= entity->gravity* delta;
+
+					if(should_remove) {
+						entity_manager_remove(entity_arr, e_entity_dying_enemy, i);
+					}
+				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw dying enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+				{
+					s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+					data.fbo = game->game_fbo;
+					data.view = view_3d;
+					data.projection = perspective;
+					data.blend_mode = e_blend_mode_normal;
+					data.depth_mode = e_depth_mode_read_and_write;
+					render_flush(data, true, 0);
+				}
+
 			}
 
 			{
@@ -2176,10 +2228,77 @@ func void start_losing(float delay)
 
 func void kill_enemy(int index)
 {
-	game->soft_data.entity_arr.active[index] = false;
-	s_v3 pos = game->soft_data.entity_arr.data[index].pos;
-	s_entity emitter = make_enemy_death_particles(pos);
-	add_emitter(emitter);
+	auto entity_arr = &game->soft_data.entity_arr;
+	entity_arr->active[index] = false;
+	s_entity enemy = entity_arr->data[index];
+
+	{
+		s_v3 pos = enemy.pos;
+		s_entity emitter = make_enemy_death_particles(pos);
+		add_emitter(emitter);
+	}
+
+	float cut_y = randf_range(&game->rng, 0.3f, 0.7f);
+	for(int i = 0; i < 2; i += 1) {
+		s_entity entity = zero;
+		s_v3 pos = enemy.pos;
+		if(i == 0) {
+			float top_of_enemy = pos.y + c_enemy_size.y * 0.5f;
+			float my_size = c_enemy_size.y * 0.5f * cut_y;
+			pos.y = top_of_enemy - my_size;
+			entity.size = v2(c_enemy_size.x, c_enemy_size.y * cut_y);
+		}
+		else {
+			float bottom_of_enemy = pos.y - c_enemy_size.y * 0.5f;
+			pos.y = bottom_of_enemy + c_enemy_size.y * 0.5f * (1.0f - cut_y);
+			entity.size = v2(c_enemy_size.x, c_enemy_size.y * (1.0f - cut_y));
+		}
+		entity.pos = pos;
+		entity.prev_pos = pos;
+		entity.dir.z = randf_range(&game->rng, -3, 0);
+		entity.dir.y = i == 0 ? 5.0f : -1.0f;
+		if(i == 0) {
+			entity.gravity = 30;
+		}
+		entity.spawn_timestamp = game->render_time;
+		entity.seed = randu64(&game->rng);
+
+		s_v2i animation_frame = get_enemy_animation_frame(enemy.animation_time);
+		entity.animation_frame = animation_frame;
+
+		float x = (float)(game->atlas2.sprite_size.x * animation_frame.x);
+		float y = (float)(game->atlas2.sprite_size.y * animation_frame.y);
+		float sx = (float)game->atlas2.sprite_size.x;
+		float sy = (float)game->atlas2.sprite_size.y;
+
+		float top = y / game->atlas2.texture_size.y;
+		float top_cut = (y + sy * cut_y) / game->atlas2.texture_size.y;
+		float bottom = (y + sy) / game->atlas2.texture_size.y;
+
+		// @Note(tkap, 19/04/2026): uv.x has to be flipped, idk why. maybe something to do with billboard shader??
+		if(i == 0) {
+			entity.uv_min = v2(
+				(x + sx) / game->atlas2.texture_size.x,
+				top
+			);
+			entity.uv_max = v2(
+				x / game->atlas2.texture_size.x,
+				top_cut
+			);
+		}
+		else {
+			entity.uv_min = v2(
+				(x + sx) / game->atlas2.texture_size.x,
+				top_cut
+			);
+			entity.uv_max = v2(
+				x / game->atlas2.texture_size.x,
+				bottom
+			);
+		}
+		swap(&entity.uv_min.y, &entity.uv_max.y);
+		entity_manager_add(entity_arr, e_entity_dying_enemy, entity);
+	}
 }
 
 func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos)
@@ -2284,4 +2403,14 @@ func s_entity make_enemy_death_particles(s_v3 pos)
 	emitter.emitter_a = a;
 	emitter.emitter_b = b;
 	return emitter;
+}
+
+func s_v2i get_enemy_animation_frame(float time)
+{
+	s_v2i c_frame_arr[] = {
+		v2i(0, 1), v2i(1, 1), v2i(2, 1),
+	};
+	s_v2i result = c_frame_arr[floorfi(time) % array_count(c_frame_arr)];
+	result = c_frame_arr[0];
+	return result;
 }
