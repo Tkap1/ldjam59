@@ -1292,8 +1292,13 @@ func void render(float interp_dt, float delta)
 
 							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, 0);
 
-							s_entity emitter = make_end_particles(pos);
-							add_emitter(emitter);
+							{
+								s_entity emitter = make_end_particles(pos);
+								emitter.emitter_a.speed *= 1.2f;
+								emitter.emitter_a.color_arr[0].color = hex_to_rgb(0xa23e8c);
+								emitter.emitter_b.spawn_data.x *= 0.5f;
+								add_emitter(emitter);
+							}
 						}
 					}
 				}
