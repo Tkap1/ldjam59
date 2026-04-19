@@ -12,7 +12,8 @@ map 2: teach how to switch lane
 map 4: teach jump
 map 6: spikes
 map 8: enemy
-map 10: portal/teleport? parry?
+map 10: teleport
+map 12: parry?
 
 tutorial
 sounds

@@ -292,7 +292,7 @@ func void input()
 
 					int entity_type_arr[9] = {
 						e_editor_entity_wall, e_editor_entity_end, e_editor_entity_fence,
-						e_editor_entity_spike, e_editor_entity_enemy, -1,
+						e_editor_entity_spike, e_editor_entity_enemy, e_editor_entity_teleport,
 						-1, -1, -1,
 					};
 					for(int i = 0; i < 9; i += 1) {
@@ -717,9 +717,28 @@ func void update()
 
 			{
 				s_v2i player_tile = tile_index_from_3d(player->target_pos);
-				s_entity* spike = get_spike_at_tile(player_tile);
-				if(spike && !will_win_soon()) {
-					start_losing(0.25f);
+				{
+					s_entity* spike = get_spike_at_tile(player_tile);
+					if(spike && !will_win_soon()) {
+						start_losing(0.25f);
+					}
+				}
+				{
+					s_entity* teleport = get_teleport_at_tile(player_tile);
+					if(teleport) {
+						b8 on_cooldown = check_action_maybe(soft_update_time, teleport->last_teleport_timestamp, c_teleport_cooldown);
+						if(!on_cooldown) {
+							s_entity* other = find_closest_teleporter_to(teleport);
+							assert(other);
+							s_v3 pos = other->pos;
+							pos.y = player->pos.y;
+							player->target_pos = pos;
+							teleport_entity(player, pos);
+
+							teleport->last_teleport_timestamp = maybe(soft_update_time);
+							other->last_teleport_timestamp = maybe(soft_update_time);
+						}
+					}
 				}
 			}
 		}
@@ -1115,6 +1134,10 @@ func void render(float interp_dt, float delta)
 						xcase e_editor_entity_enemy: {
 							set_editor_entity(mouse_tile, e_entity_enemy, 0);
 						}
+
+						xcase e_editor_entity_teleport: {
+							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_teleport);
+						}
 					}
 				}
 			}
@@ -1210,6 +1233,12 @@ func void render(float interp_dt, float delta)
 								rotation = -game->render_time;
 							}
 							draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(5, 0), make_rrr(1), rotation * 4, zero, 0);
+						}
+						xcase e_pickup_teleport: {
+							s_v3 pos = entity.pos;
+							s_v2 size = v2(0.75f);
+							pos.y += size.y * 0.5f;
+							draw_billboard_ex(game->atlas, pos, size, v2i(7, 0), make_rrr(1), 0, zero, 0);
 						}
 					}
 				}
@@ -1853,6 +1882,9 @@ func void draw_entity_2d(s_editor_entity entity, int x, int y)
 				xcase e_pickup_spike: {
 					draw_atlas_topleft(game->atlas, pos, c_tile_size_v, v2i(5, 0), make_rrr(1), 0);
 				}
+				xcase e_pickup_teleport: {
+					draw_atlas_topleft(game->atlas, pos, c_tile_size_v, v2i(7, 0), make_rrr(1), 0);
+				}
 			}
 		}
 		xcase e_entity_enemy: {
@@ -1930,6 +1962,12 @@ func s_entity* get_wall_at_tile(s_v2i index)
 func s_entity* get_spike_at_tile(s_v2i index)
 {
 	s_entity* result = get_pickup_at_tile(index, e_pickup_spike);
+	return result;
+}
+
+func s_entity* get_teleport_at_tile(s_v2i index)
+{
+	s_entity* result = get_pickup_at_tile(index, e_pickup_teleport);
 	return result;
 }
 
@@ -2055,6 +2093,28 @@ func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos)
 		if(dist < smallest_dist && dist < c_player_range) {
 			smallest_dist = dist;
 			result = maybe(i);
+		}
+	}
+	return result;
+}
+
+func s_entity* find_closest_teleporter_to(s_entity* other)
+{
+	float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
+	s_entity* result = null;
+	float smallest_dist = 9999999;
+	for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
+		if(!game->soft_data.entity_arr.active[i]) {
+			continue;
+		}
+		s_entity* entity = &game->soft_data.entity_arr.data[i];
+		b8 on_cooldown = check_action_maybe(soft_update_time, entity->last_teleport_timestamp, c_teleport_cooldown);
+		if(!on_cooldown && entity != other && entity->pickup_type == e_pickup_teleport) {
+			float dist = v3_distance(entity->pos, other->pos);
+			if(dist < smallest_dist) {
+				smallest_dist = dist;
+				result = entity;
+			}
 		}
 	}
 	return result;

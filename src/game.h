@@ -10,6 +10,7 @@ global constexpr int c_map_version = 1;
 global constexpr int c_map_count = 10;
 global constexpr float c_player_range = 1;
 global constexpr float c_enemy_range = 0.2f;
+global constexpr float c_teleport_cooldown = 1.0f;
 
 #if defined(__EMSCRIPTEN__)
 
@@ -174,6 +175,7 @@ enum e_pickup
 {
 	e_pickup_end,
 	e_pickup_spike,
+	e_pickup_teleport,
 };
 
 struct s_entity
@@ -213,6 +215,7 @@ struct s_entity
 		struct {
 			e_pickup pickup_type;
 			float dir;
+			s_maybe<float> last_teleport_timestamp;
 		};
 	};
 };
@@ -310,6 +313,7 @@ enum e_editor_entity
 	e_editor_entity_fence,
 	e_editor_entity_spike,
 	e_editor_entity_enemy,
+	e_editor_entity_teleport,
 };
 
 struct s_editor

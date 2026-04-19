@@ -42,6 +42,7 @@ func void reset_player_pos(s_entity* player);
 func s_entity* get_player();
 func s_entity* get_wall_at_tile(s_v2i index);
 func s_entity* get_spike_at_tile(s_v2i index);
+func s_entity* get_teleport_at_tile(s_v2i index);
 func s_entity* get_pickup_at_tile(s_v2i index, e_pickup pickup_type);
 func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you);
 func void jump_forward(s_entity* player);
@@ -51,6 +52,7 @@ func b8 will_lose_soon();
 func void start_losing(float delay);
 func void kill_enemy(int index);
 func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos);
+func s_entity* find_closest_teleporter_to(s_entity* other);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
