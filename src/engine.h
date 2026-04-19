@@ -12,6 +12,12 @@ enum e_mesh
 	e_mesh_sphere,
 	e_mesh_line,
 	e_mesh_plane,
+	e_mesh_aqtun_side,
+	e_mesh_aqtun_corner,
+	e_mesh_aqtun_diagonal,
+	e_mesh_aqtun_empty,
+	e_mesh_aqtun_full,
+	e_mesh_aqtun_lshape,
 	e_mesh_count,
 };
 
@@ -59,6 +65,7 @@ enum e_texture
 	e_texture_atlas,
 	e_texture_atlas2,
 	e_texture_game_fbo,
+	e_texture_aqtun,
 	e_texture_count
 };
 
@@ -70,6 +77,7 @@ global constexpr char* c_texture_path_arr[e_texture_count] = {
 	"assets/atlas.png",
 	"assets/atlas2.png",
 	"",
+	"assets/aqtun.png",
 };
 
 

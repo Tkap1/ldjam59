@@ -52,6 +52,10 @@ func s_tile_visual get_tile_index(s_map* map, int x, int y)
 
 	b8 do_x_check = true;
 	b8 do_y_check = true;
+	b8 do_base_check = true;
+	if(x >= c_map_width) {
+		do_base_check = false;
+	}
 	if (x == 0) {
 		do_x_check = false;
 	}
@@ -60,8 +64,8 @@ func s_tile_visual get_tile_index(s_map* map, int x, int y)
 	}
 
 	bool top_left_check     = do_x_check &&                 map->active[y    ][x - 1] && map->entity_arr[y    ][x - 1].type == e_entity_wall;
-	bool top_right_check    =                               map->active[y    ][x    ] && map->entity_arr[y    ][x    ].type == e_entity_wall;
-	bool bottom_right_check = do_y_check &&                 map->active[y - 1][x    ] && map->entity_arr[y - 1][x    ].type == e_entity_wall;
+	bool top_right_check    = do_base_check &&              map->active[y    ][x    ] && map->entity_arr[y    ][x    ].type == e_entity_wall;
+	bool bottom_right_check = (do_base_check && do_y_check) &&                 map->active[y - 1][x    ] && map->entity_arr[y - 1][x    ].type == e_entity_wall;
 	bool bottom_left_check  = (do_x_check && do_y_check) && map->active[y - 1][x - 1] && map->entity_arr[y - 1][x - 1].type == e_entity_wall;
 
 	if (top_left_check)     result.tile_index |= c_dualgrid_tile_top_left;

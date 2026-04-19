@@ -51,3 +51,6 @@ func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos);
 func s_entity* find_closest_teleporter_to(s_entity* other);
 func b8 will_teleport_soon();
 func float get_transition_percent(float time_now, s_transition t);
+func s_entity make_end_particles(s_v3 pos);
+func s_entity make_enemy_death_particles(s_v3 pos);
+func s_v2i get_enemy_animation_frame(float time);

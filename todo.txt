@@ -17,7 +17,6 @@ map 10: teleport
 tutorial
 sounds
 art
-aqtun tile stuff
 make new leaderboard
 shadows?
 particles
@@ -32,3 +31,6 @@ walk sound?
 switch lane sound?
 miss action sound
 sword image? model?
+lil slash billboard on enemy when kill?
+
+fix fence

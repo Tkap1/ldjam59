@@ -1340,6 +1340,13 @@ func void engine_init(s_platform_data* platform_data)
 	{
 		game->mesh_arr[e_mesh_cube] = make_mesh_from_obj_file("assets/cube.obj", &game->render_frame_arena);
 		game->mesh_arr[e_mesh_sphere] = make_mesh_from_obj_file("assets/sphere.obj", &game->render_frame_arena);
+
+		game->mesh_arr[e_mesh_aqtun_side] = make_mesh_from_obj_file("assets/side.obj", &game->render_frame_arena);
+		game->mesh_arr[e_mesh_aqtun_corner] = make_mesh_from_obj_file("assets/corner.obj", &game->render_frame_arena);
+		game->mesh_arr[e_mesh_aqtun_diagonal] = make_mesh_from_obj_file("assets/diagonal.obj", &game->render_frame_arena);
+		game->mesh_arr[e_mesh_aqtun_empty] = make_mesh_from_obj_file("assets/empty.obj", &game->render_frame_arena);
+		game->mesh_arr[e_mesh_aqtun_full] = make_mesh_from_obj_file("assets/full.obj", &game->render_frame_arena);
+		game->mesh_arr[e_mesh_aqtun_lshape] = make_mesh_from_obj_file("assets/lshape.obj", &game->render_frame_arena);
 	}
 
 	{
@@ -1550,7 +1557,7 @@ func void draw_mesh(e_mesh mesh_id, s_m4 model, s_v4 color, e_shader shader_id, 
 	s_instance_data data = zero;
 	data.model = model;
 	data.color = color;
-	add_to_render_group(data, shader_id, e_texture_white, mesh_id, render_pass_index);
+	add_to_render_group(data, shader_id, e_texture_aqtun, mesh_id, render_pass_index);
 }
 
 func void draw_mesh(e_mesh mesh_id, s_v3 pos, s_v3 size, s_v4 color, e_shader shader_id, int render_pass_index)
