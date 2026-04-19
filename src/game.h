@@ -341,6 +341,8 @@ struct s_game
 	s_lerpable music_volume;
 	int next_entity_id;
 
+	s_map map;
+
 	b8 in_editor;
 	s_maybe<int> saving_or_loading_map;
 	int map_to_save_or_load_index;

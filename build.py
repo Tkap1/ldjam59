@@ -117,10 +117,8 @@ def get_common_compiler_args(debug_mode):
 		"-Gm-",
 		"-GR-",
 		"-EHa-",
-		"-ID:/Dev/C/sdl",
-		"-ID:/Dev/C/sdl/SDL2",
-		"-I../../my_libs2",
-		"-I../src/my_libs2",
+		"-I../sdl",
+		"-I../sdl/SDL2",
 
 		"-D_CRT_SECURE_NO_WARNINGS",
 		"-wd4201", # nonstandard extension used: nameless struct/union

@@ -10,7 +10,7 @@
 #undef near
 #undef far
 
-#include "tklib.h"
+#include "../tklib.h"
 #include "platform_win32.h"
 #include "shared.h"
 global s_platform_data g_platform_data;

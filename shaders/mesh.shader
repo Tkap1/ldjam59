@@ -25,26 +25,26 @@ void main()
 	gl_Position = projection * view * instance_model * vec4(vertex, 1);
 	v_color = vertex_color * instance_color;
 	v_light_frag_pos = light_projection * light_view * instance_model * vec4(vertex, 1);
-	// v_uv = vertex_uv;
+	v_uv = vertex_uv;
 	v_frag_pos = (instance_model * vec4(vertex_pos, 1)).xyz;
 
-	vec2 uv;
-	if(abs(vertex_normal.x) > 0.9) {
-		uv = vec2(vertex_pos.y, vertex_pos.z) + 0.5;
-		if(vertex_normal.x < 0.0) { uv.x = 1.0 - uv.x; }
-		uv.y = 1.0 - uv.y;
-	}
-	else if(abs(vertex_normal.y) > 0.9) {
-		uv = vec2(vertex_pos.x, vertex_pos.z) + 0.5;
-		uv.y = 1.0 - uv.y;
-		if(vertex_normal.y > 0.0) { uv.x = 1.0 - uv.x; }
-	}
-	else {
-		uv = vec2(vertex_pos.x, vertex_pos.y) + 0.5;
-		if(vertex_normal.z > 0.0) { uv.y = 1.0 - uv.y; }
-	}
+	// vec2 uv;
+	// if(abs(vertex_normal.x) > 0.9) {
+	// 	uv = vec2(vertex_pos.y, vertex_pos.z) + 0.5;
+	// 	if(vertex_normal.x < 0.0) { uv.x = 1.0 - uv.x; }
+	// 	uv.y = 1.0 - uv.y;
+	// }
+	// else if(abs(vertex_normal.y) > 0.9) {
+	// 	uv = vec2(vertex_pos.x, vertex_pos.z) + 0.5;
+	// 	uv.y = 1.0 - uv.y;
+	// 	if(vertex_normal.y > 0.0) { uv.x = 1.0 - uv.x; }
+	// }
+	// else {
+	// 	uv = vec2(vertex_pos.x, vertex_pos.y) + 0.5;
+	// 	if(vertex_normal.z > 0.0) { uv.y = 1.0 - uv.y; }
+	// }
 
-	v_uv = uv;
+	// v_uv = uv;
 
 	mat3 normal_matrix = transpose(inverse(mat3(instance_model)));
 	v_normal = normalize(normal_matrix * vertex_normal);
@@ -65,7 +65,8 @@ void main()
 
 	vec3 light_dir = normalize(vec3(1.0, 1.0, -1.0));
 
-	vec4 texture_color = texture(in_texture, v_uv);
+	vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
+	vec4 texture_color = texture(in_texture, uv);
 
 	float d = max(0.0, dot(-light_dir, normal)) * 0.5 + 0.5;
 	color = v_color.rgb * texture_color.rgb * d;

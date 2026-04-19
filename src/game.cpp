@@ -73,7 +73,7 @@
 #define gl(...) __VA_ARGS__
 #endif // m_debug
 
-#include "tklib.h"
+#include "../tklib.h"
 #include "shared.h"
 
 #include "config.h"
@@ -102,6 +102,7 @@ global b8 g_right_click;
 #endif
 
 #include "engine.cpp"
+#include "aqtun.cpp"
 
 m_dll_export void init(s_platform_data* platform_data)
 {
@@ -1226,22 +1227,81 @@ func void render(float interp_dt, float delta)
 					draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), c_pi, zero, 0);
 				}
 
-				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw wall start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-				for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
-					if(!entity_arr->active[i]) {
-						continue;
+				for(int y = 0; y < c_map_height; y += 1) {
+					for(int x = 0; x < c_map_width; x += 1) {
+						constexpr e_mesh mesh_arr[] = {
+							e_mesh_aqtun_empty,
+							e_mesh_aqtun_corner,
+							e_mesh_aqtun_diagonal,
+							e_mesh_aqtun_side,
+							e_mesh_aqtun_lshape,
+							e_mesh_aqtun_full,
+						};
+
+						s_v3 size = v3(1);
+						s_v3 pos = v3(x, 0, -y);
+						pos.z -= 0.5f;
+
+						if((x == 0 || x == 1) && y == 0) {
+							int a =0;
+							a++;
+						}
+						else {
+							continue;
+						}
+						s_tile_visual tile = get_tile_index(&game->map, x, y);
+
+						if(tile.tile_index != 0xFF) {
+							e_mesh mesh_id = mesh_arr[tile.tile_index];
+							float rotation = c_tile_rotations[tile.rotation_index];
+							s_m4 model = m4_translate(pos);
+							if(x == 1) {
+								// rotation += c_pi * 0.5f;
+							}
+							printf("%f\n", rotation);
+							model = m4_multiply(model, m4_rotate(rotation, c_y_axis));
+							model = m4_multiply(model, m4_scale(size));
+							printf("MESH: %i\n", mesh_id);
+							draw_mesh(mesh_id, model, make_rrr(1), e_shader_mesh, 0);
+						}
 					}
-					s_entity entity = entity_arr->data[i];
-					s_v3 size = v3(1, 1, 1);
-					s_v4 color = make_rrr(1);
-					if(entity.is_fence) {
-						size.y *= 0.5f;
-						color = make_rgb(1, 0.8f, 0.8f);
-					}
-					s_v3 pos = entity.pos;
-					pos.y += size.y * 0.5f;
-					draw_mesh(e_mesh_cube, pos, size, color, e_shader_mesh, 0);
 				}
+
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw wall start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+				// for(int i = c_first_index[e_entity_wall]; i < c_last_index_plus_one[e_entity_wall]; i += 1) {
+				// 	if(!entity_arr->active[i]) {
+				// 		continue;
+				// 	}
+				// 	s_entity entity = entity_arr->data[i];
+				// 	s_v3 size = v3(1.0f);
+				// 	s_v4 color = make_rrr(1);
+				// 	if(entity.is_fence) {
+				// 		size.y *= 0.5f;
+				// 		color = make_rgb(1, 0.8f, 0.8f);
+				// 	}
+				// 	s_v3 pos = entity.pos;
+				// 	// pos.y += size.y;
+
+				// 	constexpr e_mesh mesh_arr[] = {
+				// 		e_mesh_aqtun_empty,
+				// 		e_mesh_aqtun_corner,
+				// 		e_mesh_aqtun_diagonal,
+				// 		e_mesh_aqtun_side,
+				// 		e_mesh_aqtun_lshape,
+				// 		e_mesh_aqtun_full,
+				// 	};
+
+				// 	s_v2i index = tile_index_from_3d(entity.pos);
+				// 	s_tile_visual tile = get_tile_index(&game->map, index.x, index.y);
+
+				// 	if(tile.tile_index != 0xFF) {
+				// 		e_mesh mesh_id = mesh_arr[tile.tile_index];
+				// 		float rotation = c_tile_rotations[tile.rotation_index];
+				// 		s_m4 model = m4_translate(pos);
+				// 		model = m4_multiply(model, m4_scale(size));
+				// 		draw_mesh(mesh_id, model, make_rrr(1), e_shader_mesh, 0);
+				// 	}
+				// }
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw wall end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw pickups start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -1892,6 +1952,8 @@ func void load_map(int index)
 	#if defined(m_debug)
 	game->editor.map = *map;
 	#endif
+
+	game->map = *map;
 
 	for(int y = 0; y < c_map_height; y += 1) {
 		for(int x = 0; x < c_map_width; x += 1) {
