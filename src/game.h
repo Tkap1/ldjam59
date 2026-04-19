@@ -11,6 +11,7 @@ global constexpr int c_map_count = 10;
 global constexpr float c_player_range = 1;
 global constexpr float c_enemy_range = 0.2f;
 global constexpr float c_teleport_cooldown = 1.0f;
+global constexpr float c_win_transition_duration = c_action_interval * 2;
 
 #if defined(__EMSCRIPTEN__)
 
@@ -279,10 +280,19 @@ struct s_soft_game_data
 	s_list<s_timed_msg, 8> timed_msg_arr;
 };
 
+struct s_transition
+{
+	b8 active;
+	float timestamp;
+	float duration;
+};
+
 struct s_hard_game_data
 {
 	int update_count;
 	int current_map;
+
+	s_transition map_win_transition;
 };
 
 struct s_render_pass
@@ -372,6 +382,7 @@ struct s_game
 
 	s_len_str tooltip;
 
+	s_fbo game_fbo;
 	s_fbo light_fbo;
 
 	// s_list<s_light, 256> multiplicative_light_arr;

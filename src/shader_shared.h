@@ -22,7 +22,7 @@ layout(std140) uniform ublock
 	s_v3 cam_pos;
 	float render_time;
 	s_v3 player_pos;
-	float pad0;
+	float transition_time;
 	s_v2 mouse;
 	s_v2 camera_topleft;
 	s_v2 camera_bottomright;

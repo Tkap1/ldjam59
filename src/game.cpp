@@ -519,6 +519,7 @@ func void update()
 	if(game->do_soft_reset) {
 		game->do_soft_reset = false;
 		memset(soft_data, 0, sizeof(*soft_data));
+		reset_linear_arena(&game->arena);
 
 		for_enum(type_i, e_entity) {
 			entity_manager_reset(&soft_data->entity_arr, type_i);
@@ -666,6 +667,13 @@ func void update()
 
 				if(check_for_win(player->target_pos) && !will_win_soon()) {
 					soft_data->win_timestamp = maybe(soft_update_time);
+					{
+						s_transition t = zero;
+						t.active = true;
+						t.timestamp = game->render_time;
+						t.duration = c_win_transition_duration * 2;
+						hard_data->map_win_transition = t;
+					}
 				}
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		update player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -758,7 +766,7 @@ func void update()
 			}
 
 			{
-				s_time_data data = get_time_data_maybe(soft_update_time, soft_data->win_timestamp, c_action_interval * 1.1f);
+				s_time_data data = get_time_data_maybe(soft_update_time, soft_data->win_timestamp, c_win_transition_duration);
 				if(data.percent >= 1) {
 					hard_data->current_map += 1;
 					game->do_soft_reset = true;
@@ -795,7 +803,7 @@ func void render(float interp_dt, float delta)
 {
 	pre_render(delta);
 
-	// s_hard_game_data* hard_data = &game->hard_data;
+	s_hard_game_data* hard_data = &game->hard_data;
 	s_soft_game_data* soft_data = &game->soft_data;
 	auto entity_arr = &soft_data->entity_arr;
 
@@ -814,6 +822,9 @@ func void render(float interp_dt, float delta)
 	s_v2 world_mouse = v2_multiply_m4(g_mouse, view_inv);
 
 	clear_framebuffer_color(0, make_rrr(0.0f));
+
+	clear_framebuffer_color(game->game_fbo.id, v4(0, 0, 0, 0));
+	clear_framebuffer_depth(game->game_fbo.id);
 
 	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
 
@@ -1184,6 +1195,7 @@ func void render(float interp_dt, float delta)
 
 				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
 				data.view = view_3d;
+				data.fbo = game->game_fbo;
 				data.projection = perspective;
 				data.blend_mode = e_blend_mode_disabled;
 				data.depth_mode = e_depth_mode_no_read_no_write;
@@ -1301,6 +1313,7 @@ func void render(float interp_dt, float delta)
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.fbo = game->game_fbo;
 				data.view = view_3d;
 				data.projection = perspective;
 				data.blend_mode = e_blend_mode_disabled;
@@ -1308,7 +1321,22 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true, 0);
 			}
 
-			if(soft_data->draw_signal) {
+			{
+				float transition_time = get_transition_percent(game->render_time, hard_data->map_win_transition);
+				e_shader shader = e_shader_flat;
+				if(hard_data->map_win_transition.active) {
+					shader = e_shader_transition;
+				}
+				draw_texture_screen(c_world_center, c_world_size, make_rrr(1), e_texture_game_fbo, shader, v2(0, 1), v2(1, 0), zero, 0);
+				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.transition_time = transition_time;
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_disabled;
+				data.depth_mode = e_depth_mode_no_read_no_write;
+				render_flush(data, true, 0);
+			}
+
+			if(!will_win_soon() && soft_data->draw_signal) {
 				draw_text(S("NOW"), wxy(0.5f, 0.1f), 64, make_rrr(1), true, &game->font, zero, 0);
 				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
 				data.projection = ortho;
@@ -2163,5 +2191,15 @@ func s_entity* find_closest_teleporter_to(s_entity* other)
 func b8 will_teleport_soon()
 {
 	b8 result = game->soft_data.teleport_timestamp.valid;
+	return result;
+}
+
+func float get_transition_percent(float time_now, s_transition t)
+{
+	float result = 0;
+	if(t.active) {
+		result = (time_now - t.timestamp) / t.duration;
+		result = at_most(1.0f, result);
+	}
 	return result;
 }

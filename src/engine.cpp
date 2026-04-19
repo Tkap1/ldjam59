@@ -1389,6 +1389,36 @@ func void engine_init(s_platform_data* platform_data)
 		assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 		bind_framebuffer(0);
 	}
+
+	{
+		u32* texture = &game->texture_arr[e_texture_game_fbo].id;
+		game->game_fbo.size.x = (int)c_world_size.x;
+		game->game_fbo.size.y = (int)c_world_size.y;
+		gl(glGenFramebuffers(1, &game->game_fbo.id));
+		bind_framebuffer(game->game_fbo.id);
+		gl(glGenTextures(1, texture));
+		gl(glBindTexture(GL_TEXTURE_2D, *texture));
+		gl(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, game->game_fbo.size.x, game->game_fbo.size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL));
+		gl(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+		gl(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+		gl(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0));
+
+		{
+			u32 new_depth = 0;
+			glGenTextures(1, &new_depth);
+			gl(glBindTexture(GL_TEXTURE_2D, new_depth));
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, game->game_fbo.size.x, game->game_fbo.size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, new_depth, 0);
+		}
+
+		assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+		bind_framebuffer(0);
+	}
 }
 
 func f64 get_seconds()
@@ -1574,6 +1604,7 @@ func void render_flush(s_render_flush_data data, b8 reset_render_count, int rend
 		uniform_data.player_pos = data.player_pos;
 		uniform_data.window_size.x = (float)g_platform_data->window_size.x;
 		uniform_data.window_size.y = (float)g_platform_data->window_size.y;
+		uniform_data.transition_time = data.transition_time;
 
 		{
 			s_rect r = get_camera_bounds(data.view_inv);

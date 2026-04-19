@@ -29,6 +29,7 @@ enum e_shader
 	e_shader_ground,
 	e_shader_plane,
 	e_shader_billboard,
+	e_shader_transition,
 	e_shader_count,
 };
 
@@ -45,6 +46,7 @@ global constexpr char* c_shader_path_arr[e_shader_count] = {
 	"shaders/ground.shader",
 	"shaders/plane.shader",
 	"shaders/billboard.shader",
+	"shaders/transition.shader",
 };
 
 
@@ -56,6 +58,7 @@ enum e_texture
 	e_texture_light,
 	e_texture_atlas,
 	e_texture_atlas2,
+	e_texture_game_fbo,
 	e_texture_count
 };
 
@@ -66,6 +69,7 @@ global constexpr char* c_texture_path_arr[e_texture_count] = {
 	"",
 	"assets/atlas.png",
 	"assets/atlas2.png",
+	"",
 };
 
 
@@ -190,8 +194,8 @@ struct s_render_flush_data
 	s_v3 cam_pos;
 	s_fbo fbo;
 	s_v3 player_pos;
+	float transition_time;
 };
-
 
 #pragma pack(push, 1)
 struct s_ply_face
