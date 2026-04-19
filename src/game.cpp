@@ -1206,10 +1206,10 @@ func void render(float interp_dt, float delta)
 					s_v2i frame_arr[] = {
 						v2i(0, 0), v2i(1, 0), v2i(2, 0), v2i(1, 0), v2i(3, 0), v2i(4, 0), v2i(3, 0),
 					};
-					static float ttt = 0;
-					ttt += delta * 20;
-					s_v2i frame = frame_arr[floorfi(ttt) % array_count(frame_arr)];
-					draw_billboard_ex(game->player_atlas, pos, size, frame, make_rrr(1), c_pi, zero, 0);
+					static float animation_time = 0;
+					animation_time += delta * 20;
+					s_v2i frame = frame_arr[floorfi(animation_time) % array_count(frame_arr)];
+					draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), c_pi, zero, 0);
 				}
 
 				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw wall start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -1236,11 +1236,19 @@ func void render(float interp_dt, float delta)
 						continue;
 					}
 					s_entity entity = entity_arr->data[i];
+					static float animation_time[g_entity_type_data[e_entity_pickup].max_count] = zero;
 					switch(entity.pickup_type) {
 						xcase e_pickup_end: {
 							s_v3 pos = entity.pos;
-							pos.y += 0.5f;
-							draw_mesh(e_mesh_sphere, pos, v3(0.5f), make_rgb(0, 1, 0), e_shader_mesh, 0);
+							s_v2 size = v2(1);
+							pos.y += size.y * 0.5f;
+
+							s_v2i frame_arr[] = {
+								v2i(0, 3), v2i(1, 3), v2i(2, 3)
+							};
+							animation_time[i] += delta * 10;
+							s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
+							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), -game->render_time * 2.5f, zero, 0);
 						}
 						xcase e_pickup_spike: {
 							s_v3 pos = lerp_v3(entity.prev_pos, entity.pos, interp_dt);
@@ -1255,7 +1263,14 @@ func void render(float interp_dt, float delta)
 							s_v3 pos = entity.pos;
 							s_v2 size = v2(0.75f);
 							pos.y += size.y * 0.5f;
-							draw_billboard_ex(game->atlas, pos, size, v2i(7, 0), make_rrr(1), 0, zero, 0);
+
+							s_v2i frame_arr[] = {
+								v2i(0, 2), v2i(1, 2), v2i(2, 2)
+							};
+							animation_time[i] += delta * 10;
+							s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
+
+							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, 0);
 						}
 					}
 				}
@@ -1273,7 +1288,15 @@ func void render(float interp_dt, float delta)
 					if(v3_distance(player.pos, entity.pos) <= c_player_range) {
 						color = make_rrr(1.5f);
 					}
-					draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(6, 0), color, c_pi, zero, 0);
+
+					s_v2i frame_arr[] = {
+						v2i(0, 1), v2i(1, 1), v2i(2, 1),
+					};
+					static float animation_time[g_entity_type_data[e_entity_enemy].max_count] = zero;
+					animation_time[i] += delta * 10;
+					s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
+
+					draw_billboard_ex(game->atlas2, pos, v2(0.5f), frame, color, c_pi, zero, 0);
 				}
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
