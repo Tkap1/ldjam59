@@ -1,38 +1,27 @@
+reenable song requeest
+reenable viewer rewards
 
-
-signal
-	traffic lights
-	radio signals
-	signal something to someone
-	on a signal, attack? kinda like a quick time event? or maybe a rhythm game
-	call in airstrikes and shit
-	send a "signal" you control. dodge shit and stuff idk
-
-	"quick time event" game where you can only act on a "signal"
-		A for take step 1
-		B for take step 2
-		X to attack a nearby enemy
-
-		you can only perform 1 action every N seconds
-		killing an enemy allows you to perform another action right away?
-
-		maybe later levels introduce more actions, like step left/right to dodge some obstacle
-		maybe dodge/parry an enemy attack
-
-	enemies
-	walls
-	fence
-	pickups
-		moving spike?
-		+ speed?
-		dash?
-		easier timing?
-		teleport?
-		X "free" actions (dont require matching the timing)
-
+pickups
+	easier timing?
+	refresh action?
+	X "free" actions (dont require matching the timing)
+killing an enemy allows you to perform another action right away?
 
 map 1: teach that we can press forward to not have to wait for the timer
 map 2: teach how to switch lane
 map 4: teach jump
 map 6: spikes
-map 8: ?
+map 8: enemy
+map 10: portal/teleport? parry?
+
+tutorial
+sounds
+art
+aqtun tile stuff
+make new leaderboard
+shadows?
+particles
+music
+instead of "NOW" display a green light when you can act, red when not?
+JUICE
+better map save/load
