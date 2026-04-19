@@ -31,7 +31,6 @@
 *.app
 *.zip
 *compiler_output.txt
-build/**
 game_requests.txt
 .tags
 *.rdi
