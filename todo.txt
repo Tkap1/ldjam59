@@ -34,4 +34,3 @@ sword image? model?
 lil slash billboard on enemy when kill?
 
 die when W'ing into a fence
-have dead enemies stay on the ground?

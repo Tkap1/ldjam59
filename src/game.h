@@ -233,6 +233,7 @@ struct s_entity
 			s_v2 uv_min;
 			s_v2 uv_max;
 			s_v2i animation_frame;
+			float rotation;
 		};
 	};
 };

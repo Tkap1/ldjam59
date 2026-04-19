@@ -1432,13 +1432,20 @@ func void render(float interp_dt, float delta)
 					pos.y += c_enemy_size.y * 0.5f;
 					s_v4 color = make_rrr(0.7f);
 
-					float rotation = 0;
+					b8 can_fall = true;
+					if(pos.y <= 0.0f) {
+						pos.y = 0;
+						can_fall = false;
+					}
+
 					b8 should_remove = false;
 					{
-						s_time_data data = get_time_data(game->render_time, entity->spawn_timestamp, 1.0f);
+						s_time_data data = get_time_data(game->render_time, entity->spawn_timestamp, 10.0f);
 						color.a = data.inv_percent;
 						s_rng rng = make_rng(entity->seed);
-						rotation = data.percent * c_pi * randf_range(&rng, 0.1f, 2.0f) * rand_minus_1_or_1(&rng);
+						if(can_fall) {
+							entity->rotation += randf_range(&rng, 0.1f, 2.0f) * rand_minus_1_or_1(&rng) * delta;
+						}
 						if(data.percent >= 1) {
 							should_remove = true;
 						}
@@ -1447,7 +1454,7 @@ func void render(float interp_dt, float delta)
 					{
 						s_instance_data data = zero;
 						data.model = m4_translate(pos);
-						data.model = m4_multiply(data.model, m4_rotate(rotation, c_z_axis));
+						data.model = m4_multiply(data.model, m4_rotate(entity->rotation, c_z_axis));
 						data.model = m4_multiply(data.model, m4_scale(v3(entity->size, 1)));
 						data.color = color;
 						data.uv_min = entity->uv_min;
@@ -1455,9 +1462,10 @@ func void render(float interp_dt, float delta)
 						add_to_render_group(data, e_shader_billboard, e_texture_atlas2, e_mesh_quad, 0);
 					}
 
-					entity->pos.y += entity->dir.y * delta * 0.2f;
-					entity->pos.z += entity->dir.z * delta;
-					entity->dir.y -= entity->gravity* delta;
+					if(can_fall) {
+						entity->pos += entity->dir * delta;
+						entity->dir.y -= entity->gravity* delta;
+					}
 
 					if(should_remove) {
 						entity_manager_remove(entity_arr, e_entity_dying_enemy, i);
@@ -1471,7 +1479,7 @@ func void render(float interp_dt, float delta)
 					data.view = view_3d;
 					data.projection = perspective;
 					data.blend_mode = e_blend_mode_normal;
-					data.depth_mode = e_depth_mode_read_and_write;
+					data.depth_mode = e_depth_mode_read_no_write;
 					render_flush(data, true, 0);
 				}
 
@@ -2342,10 +2350,15 @@ func void kill_enemy(int index)
 		entity.pos = pos;
 		entity.prev_pos = pos;
 		entity.dir.z = randf_range(&game->rng, -3, 0);
-		entity.dir.y = i == 0 ? 7.5f : -1.0f;
-		if(i == 0) {
-			entity.gravity = 30;
+		{
+			float r = randf_range(&game->rng, 0.5f, 2.5f) * rand_minus_1_or_1(&game->rng);
+			entity.dir.x = r;
 		}
+		{
+			float r = randf_range(&game->rng, 0.5f, 2.5f);
+			entity.dir.y = i == 0 ? r : r * 0.5f;
+		}
+		entity.gravity = 6;
 		entity.spawn_timestamp = game->render_time;
 		entity.seed = randu64(&game->rng);
 
