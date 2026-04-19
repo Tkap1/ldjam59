@@ -1064,7 +1064,7 @@ func void render(float interp_dt, float delta)
 					color = make_rrr(1);
 				}
 				float font_size = 32;
-				s_len_str str = format_text("Map %i", map_i);
+				s_len_str str = format_text("Map %i", map_i + 1);
 				draw_text(str, pos, font_size, color, false, &game->font, zero, 0);
 				pos.y += font_size;
 			}
