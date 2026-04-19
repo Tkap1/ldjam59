@@ -559,7 +559,6 @@ func void update()
 	float soft_update_time = soft_data->update_count * (float)c_update_delay;
 
 	if(should_do_game) {
-
 		s_entity* player = &entity_arr->data[0];
 
 		if(game->in_editor) {
@@ -723,17 +722,16 @@ func void update()
 						start_losing(0.25f);
 					}
 				}
-				{
+				if(!will_teleport_soon()) {
 					s_entity* teleport = get_teleport_at_tile(player_tile);
 					if(teleport) {
 						b8 on_cooldown = check_action_maybe(soft_update_time, teleport->last_teleport_timestamp, c_teleport_cooldown);
 						if(!on_cooldown) {
 							s_entity* other = find_closest_teleporter_to(teleport);
 							assert(other);
-							s_v3 pos = other->pos;
-							pos.y = player->pos.y;
-							player->target_pos = pos;
-							teleport_entity(player, pos);
+
+							soft_data->teleport_timestamp = maybe(soft_update_time);
+							soft_data->teleport_destination = v2(other->pos.x, other->pos.z);
 
 							teleport->last_teleport_timestamp = maybe(soft_update_time);
 							other->last_teleport_timestamp = maybe(soft_update_time);
@@ -741,26 +739,37 @@ func void update()
 					}
 				}
 			}
+
+			if(!will_win_soon() && !will_lose_soon()) {
+				s_time_data data = get_time_data_maybe(soft_update_time, soft_data->teleport_timestamp, 0.25f);
+				if(data.percent >= 1) {
+					soft_data->teleport_timestamp = zero;
+					s_v3 pos = v3(soft_data->teleport_destination.x, player->pos.y, soft_data->teleport_destination.y);
+					player->target_pos = pos;
+					teleport_entity(player, pos);
+				}
+			}
+
+			if(!will_win_soon()) {
+				s_time_data data = get_time_data_maybe(soft_update_time, soft_data->lose_timestamp, soft_data->lose_delay);
+				if(data.percent >= 1) {
+					game->do_soft_reset = true;
+				}
+			}
+
+			{
+				s_time_data data = get_time_data_maybe(soft_update_time, soft_data->win_timestamp, c_action_interval * 1.1f);
+				if(data.percent >= 1) {
+					hard_data->current_map += 1;
+					game->do_soft_reset = true;
+				}
+			}
+
 		}
 
 		game->update_time += (float)c_update_delay;
 		hard_data->update_count += 1;
 		soft_data->update_count += 1;
-	}
-
-	if(!will_win_soon()) {
-		s_time_data data = get_time_data_maybe(soft_update_time, soft_data->lose_timestamp, soft_data->lose_delay);
-		if(data.percent >= 1) {
-			game->do_soft_reset = true;
-		}
-	}
-
-	{
-		s_time_data data = get_time_data_maybe(soft_update_time, soft_data->win_timestamp, c_action_interval * 1.1f);
-		if(data.percent >= 1) {
-			hard_data->current_map += 1;
-			game->do_soft_reset = true;
-		}
 	}
 
 	if(hard_data->current_map >= c_map_count) {
@@ -2117,5 +2126,11 @@ func s_entity* find_closest_teleporter_to(s_entity* other)
 			}
 		}
 	}
+	return result;
+}
+
+func b8 will_teleport_soon()
+{
+	b8 result = game->soft_data.teleport_timestamp.valid;
 	return result;
 }

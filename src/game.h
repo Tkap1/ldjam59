@@ -272,6 +272,8 @@ struct s_soft_game_data
 	float next_action_time;
 	s_maybe<float> win_timestamp;
 	s_maybe<float> lose_timestamp;
+	s_maybe<float> teleport_timestamp;
+	s_v2 teleport_destination;
 	float lose_delay;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;

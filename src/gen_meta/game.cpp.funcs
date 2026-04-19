@@ -53,6 +53,7 @@ func void start_losing(float delay);
 func void kill_enemy(int index);
 func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos);
 func s_entity* find_closest_teleporter_to(s_entity* other);
+func b8 will_teleport_soon();
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
