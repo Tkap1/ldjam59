@@ -30,8 +30,6 @@ func void builder_add_separator(s_str_builder<n>* builder);
 func void add_non_spammy_message(s_v2 pos, s_len_str text);
 func void teleport_entity(s_entity* entity, s_v3 pos);
 func void set_editor_entity(s_v2i index, e_entity type, int sub_type);
-func void maybe_load_map(int index);
-func void maybe_save_map(int index);
 func void load_map(int index);
 func void save_map(int index);
 func char* to_cstr(s_len_str str, s_linear_arena* arena);

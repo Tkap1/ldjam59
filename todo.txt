@@ -24,4 +24,3 @@ particles
 music
 instead of "NOW" display a green light when you can act, red when not?
 JUICE
-better map save/load

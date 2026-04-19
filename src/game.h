@@ -314,9 +314,6 @@ enum e_editor_entity
 
 struct s_editor
 {
-	int last_action;
-	int what_to_save_or_load;
-	int save_or_load_state;
 	s_v2 cam_pos;
 	s_maybe<e_editor_entity> to_place;
 	s_map map;
@@ -331,10 +328,11 @@ struct s_game
 	s_lerpable music_volume;
 	int next_entity_id;
 
+	s_maybe<int> saving_or_loading_map;
+	#if defined(m_debug)
+	int map_to_save_or_load_index;
 	b8 in_editor;
 	s_editor editor;
-
-	#if defined(m_debug)
 	b8 cheat_menu_enabled;
 	#endif
 

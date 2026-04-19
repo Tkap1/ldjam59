@@ -298,21 +298,9 @@ func void input()
 					for(int i = 0; i < 9; i += 1) {
 						int wanted_scancode = SDL_SCANCODE_1 + i;
 						if(scancode == wanted_scancode) {
-							if(event.key.keysym.mod & KMOD_LCTRL) {
-								#if defined(m_debug)
-								maybe_load_map(i);
-								#endif
-							}
-							else if(game->in_editor) {
-								if(event.key.keysym.mod & KMOD_LSHIFT) {
-									#if defined(m_debug)
-									maybe_save_map(i);
-									#endif
-								}
-								else {
-									if(entity_type_arr[i] != -1) {
-										game->editor.to_place = maybe((e_editor_entity)entity_type_arr[i]);
-									}
+							if(game->in_editor) {
+								if(entity_type_arr[i] != -1) {
+									game->editor.to_place = maybe((e_editor_entity)entity_type_arr[i]);
 								}
 							}
 						}
@@ -326,6 +314,11 @@ func void input()
 							game->do_soft_reset = true;
 						}
 					}
+					else if(scancode == SDL_SCANCODE_L && !is_repeat) {
+						#if defined(m_debug)
+						game->saving_or_loading_map = maybe((int)e_load);
+						#endif
+					}
 					else if(scancode == SDL_SCANCODE_SPACE && !is_repeat) {
 						soft_data->want_to_jump_timestamp = maybe(soft_update_time);
 					}
@@ -338,7 +331,10 @@ func void input()
 						}
 					}
 					else if(scancode == SDL_SCANCODE_S) {
-						if(game->in_editor) {
+						if(event.key.keysym.mod & KMOD_LCTRL) {
+							game->saving_or_loading_map = maybe((int)e_save);
+						}
+						else if(game->in_editor) {
 							game->editor.cam_pos.y += 20;
 						}
 					}
@@ -368,29 +364,61 @@ func void input()
 					else if(scancode == SDL_SCANCODE_RIGHT && !is_repeat) {
 					}
 					else if(scancode == SDL_SCANCODE_UP && !is_repeat) {
+						if(game->saving_or_loading_map.valid) {
+							game->map_to_save_or_load_index = circular_index(game->map_to_save_or_load_index - 1, c_map_count);
+						}
 					}
 					else if(scancode == SDL_SCANCODE_DOWN && !is_repeat) {
+						if(game->saving_or_loading_map.valid) {
+							game->map_to_save_or_load_index = circular_index(game->map_to_save_or_load_index + 1, c_map_count);
+						}
+					}
+					else if(scancode == SDL_SCANCODE_RETURN && !is_repeat) {
+						if(game->saving_or_loading_map.valid) {
+							if(game->saving_or_loading_map.value == e_save) {
+								save_map(game->map_to_save_or_load_index);
+							}
+							else {
+								load_map(game->map_to_save_or_load_index);
+							}
+							game->saving_or_loading_map = zero;
+						}
 					}
 					else if(scancode == SDL_SCANCODE_Q && !is_repeat) {
 						soft_data->press_input.q = true;
 					}
-					else if((key == SDLK_ESCAPE && !is_repeat) || (key == SDLK_o && !is_repeat) || (key == SDLK_p && !is_repeat)) {
+					else if(scancode == SDL_SCANCODE_ESCAPE && !is_repeat) {
+						breakable_block {
+							if(game->saving_or_loading_map.valid) {
+								game->saving_or_loading_map = zero;
+								break;
+							}
+							if(state0 == e_game_state0_play) {
+								if(game->in_editor) {
+									game->editor.to_place = zero;
+								}
+								else {
+									add_state(&game->state0, e_game_state0_pause);
+								}
+								break;
+							}
+							if(state0 == e_game_state0_pause) {
+								pop_state_transition(&game->state0, game->render_time, c_transition_time);
+								break;
+							}
+						}
+					}
+					else if((scancode == SDL_SCANCODE_O || scancode == SDL_SCANCODE_P) && !is_repeat) {
 						if(state0 == e_game_state0_play) {
-							if(game->in_editor) {
-								game->editor.to_place = zero;
-							}
-							else {
-								add_state(&game->state0, e_game_state0_pause);
-							}
+							add_state(&game->state0, e_game_state0_pause);
 						}
 						else if(state0 == e_game_state0_pause) {
 							pop_state_transition(&game->state0, game->render_time, c_transition_time);
 						}
 					}
+
 					#if defined(m_debug)
 					else if(key == SDLK_s && !is_repeat && event.key.keysym.mod & KMOD_LCTRL) {
-					}
-					else if(key == SDLK_l && !is_repeat && event.key.keysym.mod & KMOD_LCTRL) {
 					}
 					else if(key == SDLK_KP_PLUS) {
 						game->speed_index = circular_index(game->speed_index + 1, array_count(c_game_speed_arr));
@@ -512,6 +540,9 @@ func void update()
 		} break;
 
 		default: {}
+	}
+	if(game->saving_or_loading_map.valid) {
+		should_do_game = false;
 	}
 
 	for(int i = 0; i < c_max_entities; i += 1) {
@@ -999,8 +1030,35 @@ func void render(float interp_dt, float delta)
 
 		b8 do_game_ui = true;
 
+		if(game->saving_or_loading_map.valid) {
+
+			if(game->saving_or_loading_map.value == e_save) {
+				draw_text(S("SAVING"), wxy(0.5f, 0.05f), 64, make_rrr(1), true, &game->font, zero, 0);
+			}
+			else {
+				draw_text(S("LOADING"), wxy(0.5f, 0.05f), 64, make_rrr(1), true, &game->font, zero, 0);
+			}
+			s_v2 pos = wxy(0.05f, 0.1f);
+			for(int map_i = 0; map_i < c_map_count; map_i += 1) {
+				s_v4 color = make_rrr(0.5f);
+				if(game->map_to_save_or_load_index == map_i) {
+					color = make_rrr(1);
+				}
+				float font_size = 32;
+				s_len_str str = format_text("Map %i", map_i);
+				draw_text(str, pos, font_size, color, false, &game->font, zero, 0);
+				pos.y += font_size;
+			}
+
+			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true, 0);
+		}
+
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		editor start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		if(game->in_editor) {
+		if(!game->saving_or_loading_map.valid && game->in_editor) {
 			s_editor* editor = &game->editor;
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		editor background start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -1080,7 +1138,7 @@ func void render(float interp_dt, float delta)
 			render_flush(data, true, 0);
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		editor end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-		else {
+		else if(!game->saving_or_loading_map.valid) {
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw ground start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			{
 				draw_plane(
@@ -1710,42 +1768,6 @@ func void set_editor_entity(s_v2i index, e_entity type, int sub_type)
 	entity.sub_type = sub_type;
 	editor->map.entity_arr[index.y][index.x] = entity;
 	editor->map.active[index.y][index.x] = true;
-}
-
-func void maybe_load_map(int index)
-{
-	if(game->editor.what_to_save_or_load != index || game->editor.last_action != e_load) {
-		game->editor.save_or_load_state = 0;
-	}
-	game->editor.last_action = e_load;
-	game->editor.what_to_save_or_load = index;
-	game->editor.save_or_load_state += 1;
-	if(game->editor.save_or_load_state == 2) {
-		printf("LOADED MAP %i\n", index + 1);
-		game->editor.save_or_load_state = 0;
-		load_map(index);
-	}
-	else {
-		printf("LOAD MAP %i? ARE YOU SURE?\n", index + 1);
-	}
-}
-
-func void maybe_save_map(int index)
-{
-	if(game->editor.what_to_save_or_load != index || game->editor.last_action != e_save) {
-		game->editor.save_or_load_state = 0;
-	}
-	game->editor.last_action = e_save;
-	game->editor.what_to_save_or_load = index;
-	game->editor.save_or_load_state += 1;
-	if(game->editor.save_or_load_state == 2) {
-		printf("SAVED MAP %i\n", index + 1);
-		game->editor.save_or_load_state = 0;
-		save_map(index);
-	}
-	else {
-		printf("SAVE MAP %i? ARE YOU SURE?\n", index + 1);
-	}
 }
 
 func void load_map(int index)
