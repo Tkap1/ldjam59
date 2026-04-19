@@ -310,8 +310,6 @@ struct s_tutorial
 	s_maybe<float> tutorial_end;
 };
 
-#if defined(m_debug)
-
 enum
 {
 	e_save,
@@ -334,7 +332,6 @@ struct s_editor
 	s_maybe<e_editor_entity> to_place;
 	s_map map;
 };
-#endif
 
 struct s_game
 {
@@ -344,11 +341,12 @@ struct s_game
 	s_lerpable music_volume;
 	int next_entity_id;
 
-	s_maybe<int> saving_or_loading_map;
-	#if defined(m_debug)
-	int map_to_save_or_load_index;
 	b8 in_editor;
+	s_maybe<int> saving_or_loading_map;
+	int map_to_save_or_load_index;
 	s_editor editor;
+
+	#if defined(m_debug)
 	b8 cheat_menu_enabled;
 	#endif
 

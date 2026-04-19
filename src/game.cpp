@@ -432,7 +432,9 @@ func void input()
 						game->cheat_menu_enabled = !game->cheat_menu_enabled;
 					}
 					else if(key == SDLK_F2 && !is_repeat) {
+						#if defined(m_debug)
 						game->in_editor = !game->in_editor;
+						#endif
 					}
 					else if(key == SDLK_j && !is_repeat) {
 					}

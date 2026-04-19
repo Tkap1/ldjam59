@@ -1329,6 +1329,7 @@ func void engine_init(s_platform_data* platform_data)
 	{
 		game->mesh_arr[e_mesh_cube] = make_mesh_from_obj_file("assets/cube.obj", &game->render_frame_arena);
 		game->mesh_arr[e_mesh_sphere] = make_mesh_from_obj_file("assets/sphere.obj", &game->render_frame_arena);
+		game->mesh_arr[e_mesh_aqtun] = make_mesh_from_obj_file("assets/aqtun.obj", &game->render_frame_arena);
 	}
 
 	{
@@ -1407,7 +1408,7 @@ func void engine_init(s_platform_data* platform_data)
 			u32 new_depth = 0;
 			glGenTextures(1, &new_depth);
 			gl(glBindTexture(GL_TEXTURE_2D, new_depth));
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, game->game_fbo.size.x, game->game_fbo.size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, game->game_fbo.size.x, game->game_fbo.size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

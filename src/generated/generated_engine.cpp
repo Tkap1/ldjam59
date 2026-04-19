@@ -60,6 +60,7 @@ func f64 get_seconds();
 func void on_gl_error(const char* expr, char* file, int line, int error);
 func void draw_rect(s_v2 pos, s_v2 size, s_v4 color, int render_pass_index);
 func void draw_rect_3d(s_v3 pos, s_v2 size, s_v4 color, int render_pass_index);
+func void draw_billboard_ex(s_atlas atlas, s_v3 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data, int render_pass_index);
 func void draw_plane(s_v3 topleft, s_v3 topright, s_v3 bottomleft, s_v3 bottomright, s_v4 color, int render_pass_index);
 func void draw_rect_topleft(s_v2 pos, s_v2 size, s_v4 color, int render_pass_index);
 func void draw_texture_screen(s_v2 pos, s_v2 size, s_v4 color, e_texture texture_id, e_shader shader_id, s_v2 uv_min, s_v2 uv_max, s_draw_data draw_data, int render_pass_index);
@@ -96,3 +97,5 @@ func void radix_sort_32(t* source, u32 count, F get_radix, s_linear_arena* arena
 func s_active_sound* find_playing_sound(e_sound id);
 func void do_lerpable_snap(s_lerpable* lerpable, float dt, float max_diff);
 func void do_basic_render_flush(s_m4 ortho, int render_pass_index, s_m4 view_inv);
+func s_v3 compute_initial_velocity(s_v3 start_pos, s_v3 target_pos, float total_time, float gravity);
+func s_time_data get_time_data_maybe(float curr, s_maybe<float> timestamp, float duration);

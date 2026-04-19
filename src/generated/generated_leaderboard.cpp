@@ -22,7 +22,6 @@ func void submit_leaderboard_success(emscripten_fetch_t *fetch);
 func void submit_leaderboard_score(int time, int leaderboard_id);
 func void set_leaderboard_name_success(emscripten_fetch_t *fetch);
 func void set_leaderboard_name_fail(emscripten_fetch_t *fetch);
-func char* to_cstr(s_len_str str, s_linear_arena* arena);
 func void set_leaderboard_name(s_len_str name);
 func void on_set_leaderboard_name(b8 success);
 func void when_leaderboard_score_submitted();
