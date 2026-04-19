@@ -3,7 +3,6 @@ import time
 import sys
 import os
 import subprocess
-import psutil
 import shutil
 
 g_time = []
