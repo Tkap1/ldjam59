@@ -645,6 +645,7 @@ func void update()
 						soft_data->want_to_attack_timestamp = zero;
 						advance_next_action_time = true;
 						s_maybe<int> enemy = get_closest_enemy_in_attack_range(player->pos);
+						soft_data->last_attack_timestamp = maybe(game->render_time);
 						if(enemy.valid) {
 							kill_enemy(enemy.value);
 							play_sound_at_speed(rand_bool(&game->rng) ? e_sound_kill1 : e_sound_kill2, get_rand_sound_speed(1.1f, &game->rng));
@@ -1213,6 +1214,7 @@ func void render(float interp_dt, float delta)
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw ground end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			{
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				{
 					s_v3 pos = player_pos;
 					if(player.is_jumping.valid) {
@@ -1232,7 +1234,47 @@ func void render(float interp_dt, float delta)
 					animation_time += delta * 20;
 					s_v2i frame = frame_arr[floorfi(animation_time) % array_count(frame_arr)];
 					draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), c_pi, zero, 0);
+
+					{
+						s_time_data data = get_time_data_maybe(game->render_time, soft_data->last_attack_timestamp, 0.25f);
+						if(soft_data->last_attack_timestamp.valid) {
+
+							constexpr int c_count = 64;
+							for(int i = 0; i < c_count; i += 1) {
+								float t = data.percent * c_pi * 2 + c_half_pi;
+								float it = i / (float)(c_count - 1);
+								t -= (1.0f - it) * 2;
+								s_v3 temp_pos = pos;
+								float coss = cosf(t);
+								float sinn = sinf(t);
+								temp_pos.x += coss * 0.25f;
+								temp_pos.z += sinn * 0.25f;
+								s_m4 model = m4_translate(temp_pos);
+								model *= m4_rotate(c_half_pi - t, c_z_axis);
+								model *= m4_scale(v3(size, 1.0f));
+
+								if(i == c_count - 1) {
+									draw_atlas_model(game->atlas2, model, v2i(0, 4), make_rrr(1), zero, 0);
+								}
+								else {
+									draw_atlas_model(game->atlas2, model, v2i(0, 4), make_ra(1.0f, 0.03f), zero, 1);
+								}
+								if(i >= c_count * 0.75f) {
+									s_v3 emitter_pos = pos;
+									temp_pos.x += coss * 0.5f;
+									temp_pos.z += sinn * 0.5f;
+									s_entity emitter = make_sword_particles(temp_pos);
+									add_emitter(emitter);
+								}
+							}
+
+							if(data.percent >= 1) {
+								soft_data->last_attack_timestamp = zero;
+							}
+						}
+					}
 				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 				for(int y = 0; y < c_map_height; y += 1) {
 					for(int x = 0; x < c_map_width + 1; x += 1) {
@@ -1368,6 +1410,17 @@ func void render(float interp_dt, float delta)
 					render_flush(data, true, 0);
 				}
 
+				// @Note(tkap, 19/04/2026): Sword trail thing
+				{
+					s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+					data.fbo = game->game_fbo;
+					data.view = view_3d;
+					data.projection = perspective;
+					data.blend_mode = e_blend_mode_normal;
+					data.depth_mode = e_depth_mode_read_no_write;
+					render_flush(data, true, 1);
+				}
+
 				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw dying enemies start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				for(int i = c_first_index[e_entity_dying_enemy]; i < c_last_index_plus_one[e_entity_dying_enemy]; i += 1) {
 					if(!entity_arr->active[i]) {
@@ -1382,7 +1435,7 @@ func void render(float interp_dt, float delta)
 					float rotation = 0;
 					b8 should_remove = false;
 					{
-						s_time_data data = get_time_data(game->render_time, entity->spawn_timestamp, 0.5f);
+						s_time_data data = get_time_data(game->render_time, entity->spawn_timestamp, 1.0f);
 						color.a = data.inv_percent;
 						s_rng rng = make_rng(entity->seed);
 						rotation = data.percent * c_pi * randf_range(&rng, 0.1f, 2.0f) * rand_minus_1_or_1(&rng);
@@ -2289,7 +2342,7 @@ func void kill_enemy(int index)
 		entity.pos = pos;
 		entity.prev_pos = pos;
 		entity.dir.z = randf_range(&game->rng, -3, 0);
-		entity.dir.y = i == 0 ? 5.0f : -1.0f;
+		entity.dir.y = i == 0 ? 7.5f : -1.0f;
 		if(i == 0) {
 			entity.gravity = 30;
 		}
@@ -2417,7 +2470,7 @@ func s_entity make_end_particles(s_v3 pos)
 func s_entity make_enemy_death_particles(s_v3 pos)
 {
 	s_particle_emitter_a a = make_emitter_a();
-	a.radius = 0.02f;
+	a.radius = 0.03f;
 	a.speed = 1.0f;
 	a.particle_duration = 1.0f;
 	a.radius_rand = 0.5f;
@@ -2445,4 +2498,37 @@ func s_v2i get_enemy_animation_frame(float time)
 	};
 	s_v2i result = c_frame_arr[floorfi(time) % array_count(c_frame_arr)];
 	return result;
+}
+
+func s_entity make_sword_particles(s_v3 pos)
+{
+	s_particle_emitter_a a = make_emitter_a();
+	a.radius = 0.02f;
+	a.speed = 1.1f;
+	a.particle_duration = 0.25f;
+	a.radius_rand = 0.5f;
+	a.speed_rand = 0.5f;
+	a.particle_duration_rand = 0.5f;
+	a.dir = v3(1, 1, 1);
+	a.dir_rand = v3(1, 1, 1);
+	a.color_arr[0].color = make_rgb(0.5f, 0.1f, 0.1f);
+	a.color_arr[1].color = make_rgb(0.5f, 0.5f, 0.5f);
+	a.color_arr[1].percent = 0.5f;
+	a.shrink = 1;
+	{
+		s_particle_color color = zero;
+		color.color = make_rrr(0);
+		color.percent = 1;
+		a.color_arr.add(color);
+	}
+	a.pos = pos;
+	s_particle_emitter_b b = make_emitter_b();
+	// b.spawn_type = e_emitter_spawn_type_circle;
+	// b.spawn_data.x = 0.25f;
+	b.particle_count = 1;
+
+	s_entity emitter = zero;
+	emitter.emitter_a = a;
+	emitter.emitter_b = b;
+	return emitter;
 }

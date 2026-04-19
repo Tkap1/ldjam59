@@ -34,4 +34,4 @@ sword image? model?
 lil slash billboard on enemy when kill?
 
 die when W'ing into a fence
-get lower ground mesh from aqtun
+have dead enemies stay on the ground?

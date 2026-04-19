@@ -1955,6 +1955,27 @@ func void draw_atlas_ex(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 co
 	add_to_render_group(data, e_shader_flat, atlas.texture, e_mesh_quad, render_pass_index);
 }
 
+func void draw_atlas_model(s_atlas atlas, s_m4 model, s_v2i index, s_v4 color, s_draw_data draw_data, int render_pass_index)
+{
+	s_instance_data data = zero;
+	data.model = model;
+	data.color = color;
+	int x = index.x * atlas.sprite_size.x + atlas.padding;
+	data.uv_min.x = x / (float)atlas.texture_size.x;
+	data.uv_max.x = data.uv_min.x + (atlas.sprite_size.x - atlas.padding) / (float)atlas.texture_size.x;
+	int y = index.y * atlas.sprite_size.y + atlas.padding;
+	data.uv_min.y = y / (float)(atlas.texture_size.y);
+	data.uv_max.y = data.uv_min.y + (atlas.sprite_size.y - atlas.padding) / (float)atlas.texture_size.y;
+	data.mix_weight = draw_data.mix_weight;
+	data.mix_color = draw_data.mix_color;
+
+	if(draw_data.flip_x) {
+		swap(&data.uv_min.x, &data.uv_max.x);
+	}
+
+	add_to_render_group(data, e_shader_flat, atlas.texture, e_mesh_quad, render_pass_index);
+}
+
 func void draw_atlas_topleft(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 color, int render_pass_index)
 {
 	pos += size * 0.5f;

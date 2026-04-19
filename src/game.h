@@ -285,6 +285,7 @@ struct s_soft_game_data
 	s_maybe<float> want_to_attack_timestamp;
 	s_maybe<float> last_action_success_timestamp;
 	s_maybe<float> last_action_timestamp;
+	s_maybe<float> last_attack_timestamp;
 	b8 draw_signal;
 	float next_action_time;
 	s_maybe<float> win_timestamp;
