@@ -2177,6 +2177,9 @@ func void start_losing(float delay)
 func void kill_enemy(int index)
 {
 	game->soft_data.entity_arr.active[index] = false;
+	s_v3 pos = game->soft_data.entity_arr.data[index].pos;
+	s_entity emitter = make_enemy_death_particles(pos);
+	add_emitter(emitter);
 }
 
 func s_maybe<int> get_closest_enemy_in_attack_range(s_v3 pos)
@@ -2252,6 +2255,30 @@ func s_entity make_end_particles(s_v3 pos)
 	b.spawn_type = e_emitter_spawn_type_circle;
 	b.spawn_data.x = 0.5f;
 	b.particle_count = 10;
+
+	s_entity emitter = zero;
+	emitter.emitter_a = a;
+	emitter.emitter_b = b;
+	return emitter;
+}
+
+func s_entity make_enemy_death_particles(s_v3 pos)
+{
+	s_particle_emitter_a a = make_emitter_a();
+	a.radius = 0.02f;
+	a.speed = 1.0f;
+	a.particle_duration = 1.0f;
+	a.radius_rand = 0.5f;
+	a.speed_rand = 0.5f;
+	a.particle_duration_rand = 0.5f;
+	a.dir = v3(1, 1, 1);
+	a.dir_rand = v3(1, 1, 1);
+	a.color_arr[0].color = make_rgb(1.0f, 0.1f, 0.1f);
+	a.pos = pos;
+	s_particle_emitter_b b = make_emitter_b();
+	b.spawn_type = e_emitter_spawn_type_circle;
+	b.spawn_data.x = 0.25f;
+	b.particle_count = 128;
 
 	s_entity emitter = zero;
 	emitter.emitter_a = a;
