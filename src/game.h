@@ -364,6 +364,7 @@ struct s_game
 	s_input_name_state input_name_state;
 
 	s_atlas atlas;
+	s_atlas player_atlas;
 
 	#if defined(m_winhttp)
 	HINTERNET session;

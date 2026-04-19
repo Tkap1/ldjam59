@@ -13,7 +13,6 @@ map 4: teach jump
 map 6: spikes
 map 8: enemy
 map 10: teleport
-map 12: parry?
 
 tutorial
 sounds
@@ -25,3 +24,5 @@ particles
 music
 instead of "NOW" display a green light when you can act, red when not?
 JUICE
+
+PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us

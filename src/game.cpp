@@ -1201,7 +1201,15 @@ func void render(float interp_dt, float delta)
 							get_player()->is_jumping = zero;
 						}
 					}
-					draw_rect_3d(pos, c_player_size, make_rrr(0.7f), 0);
+					s_v2 size = c_player_size * 1.5f;
+					pos.y += size.y * 0.5f;
+					s_v2i frame_arr[] = {
+						v2i(0, 0), v2i(1, 0), v2i(2, 0), v2i(1, 0), v2i(3, 0), v2i(4, 0), v2i(3, 0),
+					};
+					static float ttt = 0;
+					ttt += delta * 20;
+					s_v2i frame = frame_arr[floorfi(ttt) % array_count(frame_arr)];
+					draw_billboard_ex(game->player_atlas, pos, size, frame, make_rrr(1), c_pi, zero, 0);
 				}
 
 				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw wall start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -1940,7 +1948,7 @@ func s_entity* get_end()
 
 func void reset_player_pos(s_entity* player)
 {
-	s_v3 target_pos = v3(c_map_width / 2, c_player_size.y * 0.5f, 0);
+	s_v3 target_pos = v3(c_map_width / 2, 0, 0);
 	player->target_pos = target_pos;
 	teleport_entity(player, target_pos);
 }

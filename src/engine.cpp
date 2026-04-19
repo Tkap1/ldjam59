@@ -1367,6 +1367,10 @@ func void engine_init(s_platform_data* platform_data)
 		game->atlas.texture = e_texture_atlas;
 		game->atlas.texture_size = v2i(256, 256);
 		game->atlas.sprite_size = v2i(16, 16);
+
+		game->player_atlas.texture = e_texture_player_atlas;
+		game->player_atlas.texture_size = v2i(320, 320);
+		game->player_atlas.sprite_size = v2i(64, 64);
 	}
 	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		atlas end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
