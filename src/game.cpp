@@ -1158,12 +1158,16 @@ func void render(float interp_dt, float delta)
 						}
 					}
 					s_v2 size = c_player_size * 1.5f;
+					size.x *= 2;
 					pos.y += size.y * 0.5f;
+					// s_v2i frame_arr[] = {
+					// 	v2i(0, 0), v2i(1, 0), v2i(2, 0), v2i(1, 0), v2i(3, 0), v2i(4, 0), v2i(3, 0),
+					// };
 					s_v2i frame_arr[] = {
-						v2i(0, 0), v2i(1, 0), v2i(2, 0), v2i(1, 0), v2i(3, 0), v2i(4, 0), v2i(3, 0),
+						v2i(0, 9), v2i(1, 9), v2i(2, 9), v2i(3, 9),
 					};
 					static float animation_time = 0;
-					animation_time += delta * 20;
+					animation_time += delta * 15;
 					s_v2i frame = frame_arr[floorfi(animation_time) % array_count(frame_arr)];
 					draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), c_pi, zero, 0);
 
