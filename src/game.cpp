@@ -296,7 +296,7 @@ func void input()
 					int entity_type_arr[9] = {
 						e_editor_entity_wall, e_editor_entity_end, e_editor_entity_fence,
 						e_editor_entity_spike, e_editor_entity_enemy, e_editor_entity_teleport,
-						-1, -1, -1,
+						e_editor_entity_plus_2_actions, -1, -1,
 					};
 					for(int i = 0; i < 9; i += 1) {
 						int wanted_scancode = SDL_SCANCODE_1 + i;
@@ -757,6 +757,26 @@ func void update()
 
 			{
 				s_v2i player_tile = tile_index_from_3d(player->target_pos);
+
+				{
+					s_maybe<int> powerup = get_plus_2_actions_at_tile(player_tile);
+					if(powerup.valid) {
+						soft_data->num_free_actions = 2;
+						{
+							s_v3 pos = entity_arr->data[powerup.value].pos;
+							s_entity emitter = make_plus_2_action_particles(pos + v3(0, 0.25f, 0));
+							emitter.emitter_a.particle_duration *= 4;
+							emitter.emitter_a.radius *= 2;
+							emitter.emitter_a.speed *= 8;
+							emitter.emitter_a.gravity = -0.05f;
+							emitter.emitter_b.particle_count *= 100;
+							add_emitter(emitter);
+						}
+						play_sound_at_speed(e_sound_plus_2_action, get_rand_sound_speed(1.1f, &game->rng));
+						entity_manager_remove(entity_arr, e_entity_pickup, powerup.value);
+					}
+				}
+
 				{
 					s_entity* spike = get_spike_at_tile(player_tile);
 					if(spike && !will_win_soon()) {
@@ -1008,6 +1028,10 @@ func void render(float interp_dt, float delta)
 						xcase e_editor_entity_teleport: {
 							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_teleport);
 						}
+
+						xcase e_editor_entity_plus_2_actions: {
+							set_editor_entity(mouse_tile, e_entity_pickup, e_pickup_plus_2_actions);
+						}
 					}
 				}
 			}
@@ -1198,6 +1222,7 @@ func void render(float interp_dt, float delta)
 							}
 
 						}
+
 						xcase e_pickup_spike: {
 							s_v3 pos = lerp_v3(entity.prev_pos, entity.pos, interp_dt);
 							pos.y += 0.25f;
@@ -1207,6 +1232,26 @@ func void render(float interp_dt, float delta)
 							}
 							draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(5, 0), make_rrr(1), rotation * 4, zero, 0);
 						}
+
+						xcase e_pickup_plus_2_actions: {
+							s_v2 size = v2(0.33f);
+							s_v3 pos = entity.pos;
+							pos.y += size.y * 0.5f;
+							pos.y += 0.1f;
+							pos.y += sinf2(game->render_time * 5) * 0.2f;
+
+							s_v2i frame_arr[] = {
+								v2i(0, 6), v2i(1, 6), v2i(2, 6)
+							};
+							animation_time[i] += delta * 10;
+							s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
+
+							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, 0);
+
+							s_entity emitter = make_plus_2_action_particles(pos);
+							add_emitter(emitter);
+						}
+
 						xcase e_pickup_teleport: {
 							s_v3 pos = entity.pos;
 							s_v2 size = v2(0.75f);
@@ -1225,6 +1270,7 @@ func void render(float interp_dt, float delta)
 								add_emitter(emitter);
 							}
 						}
+						invalid_default_xcase;
 					}
 				}
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw pickups end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2218,6 +2264,9 @@ func void draw_entity_2d(s_editor_entity entity, int x, int y)
 				xcase e_pickup_teleport: {
 					draw_atlas_topleft(game->atlas, pos, c_tile_size_v, v2i(7, 0), make_rrr(1), 0);
 				}
+				xcase e_pickup_plus_2_actions: {
+					draw_atlas_topleft(game->atlas2, pos, c_tile_size_v, v2i(0, 6), make_rrr(1), 0);
+				}
 			}
 		}
 		xcase e_entity_enemy: {
@@ -2294,19 +2343,33 @@ func s_entity* get_wall_at_tile(s_v2i index)
 
 func s_entity* get_spike_at_tile(s_v2i index)
 {
-	s_entity* result = get_pickup_at_tile(index, e_pickup_spike);
+	s_maybe<int> entity_index = get_pickup_at_tile(index, e_pickup_spike);
+	s_entity* result = null;
+	if(entity_index.valid) {
+		result = &game->soft_data.entity_arr.data[entity_index.value];
+	}
+	return result;
+}
+
+func s_maybe<int> get_plus_2_actions_at_tile(s_v2i index)
+{
+	s_maybe<int> result = get_pickup_at_tile(index, e_pickup_plus_2_actions);
 	return result;
 }
 
 func s_entity* get_teleport_at_tile(s_v2i index)
 {
-	s_entity* result = get_pickup_at_tile(index, e_pickup_teleport);
+	s_maybe<int> entity_index = get_pickup_at_tile(index, e_pickup_teleport);
+	s_entity* result = null;
+	if(entity_index.valid) {
+		result = &game->soft_data.entity_arr.data[entity_index.value];
+	}
 	return result;
 }
 
-func s_entity* get_pickup_at_tile(s_v2i index, e_pickup pickup_type)
+func s_maybe<int> get_pickup_at_tile(s_v2i index, e_pickup pickup_type)
 {
-	s_entity* result = null;
+	s_maybe<int> result = zero;
 	for(int i = c_first_index[e_entity_pickup]; i < c_last_index_plus_one[e_entity_pickup]; i += 1) {
 		if(!game->soft_data.entity_arr.active[i]) {
 			continue;
@@ -2315,7 +2378,7 @@ func s_entity* get_pickup_at_tile(s_v2i index, e_pickup pickup_type)
 		if(entity->pickup_type == pickup_type) {
 			s_v2i temp = tile_index_from_3d(entity->target_pos);
 			if(index == temp) {
-				result = entity;
+				result = maybe(i);
 				break;
 			}
 		}
@@ -2583,6 +2646,30 @@ func s_entity make_end_particles(s_v3 pos)
 	b.spawn_type = e_emitter_spawn_type_circle;
 	b.spawn_data.x = 0.5f;
 	b.particle_count = 10;
+
+	s_entity emitter = zero;
+	emitter.emitter_a = a;
+	emitter.emitter_b = b;
+	return emitter;
+}
+
+func s_entity make_plus_2_action_particles(s_v3 pos)
+{
+	s_particle_emitter_a a = make_emitter_a();
+	a.radius = 0.02f;
+	a.speed = 0.5f;
+	a.particle_duration = 0.5f;
+	a.radius_rand = 0.5f;
+	a.speed_rand = 0.5f;
+	a.particle_duration_rand = 0.5f;
+	a.dir = v3(0.5f, 1, 0.1f);
+	a.dir_rand = v3(1, 1, 1);
+	a.color_arr[0].color = make_rgb(0.25f * 0.5f, 0.25f * 0.5f, 1.0f * 0.5f);
+	a.pos = pos;
+	s_particle_emitter_b b = make_emitter_b();
+	b.spawn_type = e_emitter_spawn_type_circle;
+	b.spawn_data.x = 0.125f;
+	b.particle_count = 3;
 
 	s_entity emitter = zero;
 	emitter.emitter_a = a;

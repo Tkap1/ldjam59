@@ -111,6 +111,7 @@ m_gl_funcs
 #undef X
 
 #define invalid_default_case default: { assert(!"Invalid default case"); }
+#define invalid_default_xcase break; default: { assert(!"Invalid default case"); }
 #define invalid_else else { assert(!"Invalid else"); }
 
 #if defined(_WIN32) && defined(m_debug)
@@ -178,6 +179,7 @@ enum e_pickup
 	e_pickup_end,
 	e_pickup_spike,
 	e_pickup_teleport,
+	e_pickup_plus_2_actions,
 };
 
 struct s_entity
@@ -348,6 +350,7 @@ enum e_editor_entity
 	e_editor_entity_spike,
 	e_editor_entity_enemy,
 	e_editor_entity_teleport,
+	e_editor_entity_plus_2_actions,
 };
 
 struct s_editor

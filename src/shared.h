@@ -37,6 +37,7 @@ enum e_sound
 	e_sound_walk,
 	e_sound_teleport,
 	e_sound_music,
+	e_sound_plus_2_action,
 	e_sound_count,
 };
 
@@ -60,6 +61,7 @@ global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/walk.wav", 0.1f},
 	{"assets/teleport.wav", 0.1f},
 	{"assets/music.wav", 0.5f},
+	{"assets/plus_2_action.wav", 0.2f},
 };
 
 struct s_active_sound

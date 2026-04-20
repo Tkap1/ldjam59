@@ -63,7 +63,7 @@ void main()
 	// vec3 color = normal * 0.5 + 0.5;
 	vec3 color = vec3(0.0);
 
-	vec3 light_dir = normalize(vec3(1.0, 1.0, -1.0));
+	vec3 light_dir = normalize(vec3(1.0, -1.0, -1.0));
 
 	// vec4 texture_color = texture(in_texture, v_uv);
 	vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
