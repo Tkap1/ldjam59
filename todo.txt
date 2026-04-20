@@ -52,7 +52,7 @@ JUICE
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 
-death sound
+death particles
 walk sound?
 switch lane sound?
 killing enemy gives you +2 free actions? capped

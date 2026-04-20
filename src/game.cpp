@@ -2353,10 +2353,11 @@ func b8 will_lose_soon()
 
 func void start_losing(float delay)
 {
-	if(!will_lose_soon()) {
+	if(!will_lose_soon() && !will_win_soon()) {
 		float soft_update_time = game->soft_data.update_count * (float)c_update_delay;
 		game->soft_data.lose_timestamp = maybe(soft_update_time);
 		game->soft_data.lose_delay = delay;
+		play_sound_at_speed(e_sound_death, get_rand_sound_speed(1.1f, &game->rng));
 	}
 }
 
