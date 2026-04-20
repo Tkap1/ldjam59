@@ -51,6 +51,4 @@ PROBLEM: jumping into portal that has 1 wall behind it kills us instead of telep
 maybe we can move all of the die/win stuff to the end of the frame?? idk
 introduce enemies earlier. they are the most fun part of the game
 
-maybe consuming a free action doesn't move spikes?
-
 maybe move back on input fail?

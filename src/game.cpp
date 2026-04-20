@@ -693,6 +693,7 @@ func void update()
 				if(wanted_to_perform_action && soft_data->num_free_actions > 0) {
 					soft_data->next_action_time = soft_update_time - (float)c_update_delay;
 					soft_data->num_free_actions -= 1;
+					do_a_turn = false;
 				}
 
 				if(!wanted_to_perform_action && soft_data->num_free_actions > 0) {
