@@ -2279,13 +2279,17 @@ func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you)
 		wall = get_wall_at_tile(player_tile);
 	}
 
-	if(!wall) {
+	b8 is_fence = false;
+	if(wall) {
+		is_fence = wall->is_fence;
+	}
+	else {
 		s_v3 target_pos = player->target_pos;
 		target_pos.z -= 1;
 		player->target_pos = target_pos;
 	}
 
-	if(does_walking_into_wall_kill_you && wall) {
+	if((does_walking_into_wall_kill_you || is_fence) && wall) {
 		start_losing(c_action_interval * 1.1f);
 	}
 }

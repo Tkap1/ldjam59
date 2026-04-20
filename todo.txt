@@ -57,5 +57,3 @@ walk sound?
 switch lane sound?
 killing enemy gives you +2 free actions? capped
 introduce enmies earlier. they are the most fun part of the game
-
-die when W'ing into a fence
