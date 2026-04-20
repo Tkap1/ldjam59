@@ -136,6 +136,8 @@ m_dll_export void init(s_platform_data* platform_data)
 
 	load_map(0);
 
+	game->hide_timer = true;
+
 	play_sound_ex(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
 }
 
@@ -338,7 +340,9 @@ func void input()
 					}
 					else if(scancode == SDL_SCANCODE_S) {
 						if(event.key.keysym.mod & KMOD_LCTRL) {
+							#if defined(m_debug)
 							game->saving_or_loading_map = maybe((int)e_save);
+							#endif
 						}
 						else if(game->in_editor) {
 							game->editor.cam_pos.y += 20;

@@ -41,3 +41,22 @@ volume sliders?
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+Wait for the green signal, then perform an action.
+
+Jump over spikes, kill enemies, win.
+
+
+-Dev-
+Made in C++ without an engine, in about 30 hours
+
+
+-Credits-
+Programming: Tkap
+Graphics: Tkap & Aqtun & Superku
+Sounds: Tkap & opengameart
+Music: TeknoAXE
+
