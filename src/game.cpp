@@ -774,6 +774,22 @@ func void update()
 
 							teleport->last_teleport_timestamp = maybe(soft_update_time);
 							other->last_teleport_timestamp = maybe(soft_update_time);
+
+							play_sound_at_speed(e_sound_teleport, get_rand_sound_speed(1.1f, &game->rng));
+
+							{
+								s_v3 pos_arr[] = {
+									teleport->pos, other->pos
+								};
+								for(int i = 0; i < 2; i += 1) {
+									s_entity emitter = make_teleporter_particles(pos_arr[i] + v3(0, 0.5f, 0));
+									emitter.emitter_a.particle_duration *= 2;
+									emitter.emitter_a.radius *= 2;
+									emitter.emitter_a.speed *= 4;
+									emitter.emitter_b.particle_count = 128;
+									add_emitter(emitter);
+								}
+							}
 						}
 					}
 				}
@@ -1391,10 +1407,7 @@ func void render(float interp_dt, float delta)
 							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, 0);
 
 							{
-								s_entity emitter = make_end_particles(pos);
-								emitter.emitter_a.speed *= 1.2f;
-								emitter.emitter_a.color_arr[0].color = hex_to_rgb(0xa23e8c);
-								emitter.emitter_b.spawn_data.x *= 0.5f;
+								s_entity emitter = make_teleporter_particles(pos);
 								add_emitter(emitter);
 							}
 						}
@@ -2509,6 +2522,15 @@ func float get_transition_percent(float time_now, s_transition t)
 		result = at_most(1.0f, result);
 	}
 	return result;
+}
+
+func s_entity make_teleporter_particles(s_v3 pos)
+{
+	s_entity emitter = make_end_particles(pos);
+	emitter.emitter_a.speed *= 1.2f;
+	emitter.emitter_a.color_arr[0].color = hex_to_rgb(0xa23e8c);
+	emitter.emitter_b.spawn_data.x *= 0.5f;
+	return emitter;
 }
 
 func s_entity make_end_particles(s_v3 pos)

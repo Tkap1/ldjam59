@@ -41,7 +41,7 @@ map 8: enemy
 map 10: teleport
 
 tutorial
-sounds
+	mention that killing an enemy gives you +2 free actions
 art
 make new leaderboard
 shadows?
