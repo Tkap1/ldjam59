@@ -595,12 +595,14 @@ func void update()
 						soft_data->want_to_move_forward_timestamp = zero;
 						move_forward(player, true);
 						advance_next_action_time = true;
+						play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 					}
 				}
 
 				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_left_timestamp, 0.0f)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
+						play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 						s_v2i player_tile = tile_index_from_3d(player->target_pos - v3(1, 0, 0));
 						s_entity* wall = get_wall_at_tile(player_tile);
 						soft_data->want_to_move_left_timestamp = zero;
@@ -616,6 +618,7 @@ func void update()
 				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_right_timestamp, 0.0f)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
+						play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 						s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
 						s_entity* wall = get_wall_at_tile(player_tile);
 						soft_data->want_to_move_right_timestamp = zero;
@@ -681,6 +684,7 @@ func void update()
 					soft_data->next_action_time += c_action_interval + c_action_grace_period;
 					do_a_turn = true;
 					move_forward(player, true);
+					play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 				}
 
 				if(refresh_action) {
