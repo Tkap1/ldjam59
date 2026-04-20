@@ -2,6 +2,30 @@ stream:
 	reenable song requeest
 	reenable viewer rewards
 	get rid of streamlabs donation thing
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 pickups
@@ -31,7 +55,6 @@ PROBLEM: jumping into portal that has 1 wall behind it kills us instead of telep
 death sound
 walk sound?
 switch lane sound?
-miss action sound
 killing enemy gives you +2 free actions? capped
 introduce enmies earlier. they are the most fun part of the game
 

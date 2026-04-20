@@ -32,6 +32,7 @@ enum e_sound
 	e_sound_kill2,
 	e_sound_jump,
 	e_sound_landing,
+	e_sound_fail_action,
 	e_sound_count,
 };
 
@@ -50,6 +51,7 @@ global constexpr s_sound_data c_sound_data_arr[e_sound_count] = {
 	{"assets/kill2.wav", 0.2f},
 	{"assets/jump.wav", 0.2f},
 	{"assets/landing.wav", 0.2f},
+	{"assets/fail_action.wav", 0.2f},
 };
 
 struct s_active_sound

@@ -37,6 +37,7 @@ enum e_shader
 	e_shader_plane,
 	e_shader_billboard,
 	e_shader_transition,
+	e_shader_fail_action,
 	e_shader_count,
 };
 
@@ -54,6 +55,7 @@ global constexpr char* c_shader_path_arr[e_shader_count] = {
 	"shaders/plane.shader",
 	"shaders/billboard.shader",
 	"shaders/transition.shader",
+	"shaders/fail_action.shader",
 };
 
 

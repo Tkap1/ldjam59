@@ -1479,14 +1479,19 @@ func void on_gl_error(const char* expr, char* file, int line, int error)
 	#endif
 }
 
-func void draw_rect(s_v2 pos, s_v2 size, s_v4 color, int render_pass_index)
+func void draw_rect_ex(s_v2 pos, s_v2 size, s_v4 color, e_shader shader, int render_pass_index)
 {
 	s_instance_data data = zero;
 	data.model = m4_translate(v3(pos, 0));
 	data.model = m4_multiply(data.model, m4_scale(v3(size, 1)));
 	data.color = color;
 
-	add_to_render_group(data, e_shader_flat, e_texture_white, e_mesh_quad, render_pass_index);
+	add_to_render_group(data, shader, e_texture_white, e_mesh_quad, render_pass_index);
+}
+
+func void draw_rect(s_v2 pos, s_v2 size, s_v4 color, int render_pass_index)
+{
+	draw_rect_ex(pos, size, color, e_shader_flat, render_pass_index);
 }
 
 func void draw_rect_3d(s_v3 pos, s_v2 size, s_v4 color, int render_pass_index)

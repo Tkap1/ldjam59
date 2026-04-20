@@ -666,6 +666,14 @@ func void update()
 				}
 
 				if(wanted_to_perform_action && !can_act) {
+					play_sound_at_speed(e_sound_fail_action, get_rand_sound_speed(1.1f, &game->rng));
+					{
+						s_transition t = zero;
+						t.active = true;
+						t.timestamp = game->render_time;
+						t.duration = 0.5f;
+						soft_data->fail_action_effect = t;
+					}
 					soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
 				}
 
@@ -1489,6 +1497,27 @@ func void render(float interp_dt, float delta)
 					data.depth_mode = e_depth_mode_read_no_write;
 					render_flush(data, true, 0);
 				}
+
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw fail action start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+				{
+					if(soft_data->fail_action_effect.active) {
+						s_time_data data = get_time_data(game->render_time, soft_data->fail_action_effect.timestamp, soft_data->fail_action_effect.duration);
+						draw_rect_ex(c_world_center, c_world_size, make_rgba(0.5f, 0.0f, 0.0f, data.inv_percent), e_shader_fail_action, 0);
+						if(data.percent >= 1) {
+							soft_data->fail_action_effect = zero;
+						}
+					}
+
+					{
+						s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+						data.fbo = game->game_fbo;
+						data.projection = ortho;
+						data.blend_mode = e_blend_mode_normal;
+						data.depth_mode = e_depth_mode_no_read_no_write;
+						render_flush(data, true, 0);
+					}
+				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw fail action end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			}
 

@@ -264,6 +264,15 @@ struct s_press_input
 	b8 q;
 };
 
+
+struct s_transition
+{
+	b8 active;
+	float timestamp;
+	float duration;
+};
+
+
 struct s_soft_game_data
 {
 	float last_non_spammy_timestamp;
@@ -295,14 +304,9 @@ struct s_soft_game_data
 	s_v2 teleport_destination;
 	float lose_delay;
 
-	s_list<s_timed_msg, 8> timed_msg_arr;
-};
+	s_transition fail_action_effect;
 
-struct s_transition
-{
-	b8 active;
-	float timestamp;
-	float duration;
+	s_list<s_timed_msg, 8> timed_msg_arr;
 };
 
 struct s_hard_game_data
