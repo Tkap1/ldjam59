@@ -69,7 +69,7 @@ void main()
 	vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
 	vec4 texture_color = texture(in_texture, uv);
 
-	float d = max(0.0, dot(-light_dir, normal)) * 0.5 + 0.5;
+	float d = max(0.0, dot(-light_dir, normal)) * 0.9 + 0.3;
 	color = v_color.rgb * texture_color.rgb * d;
 
 	// color = vec3(d);
