@@ -50,7 +50,6 @@ maybe we can move all of the die/win stuff to the end of the frame?? idk
 introduce enemies earlier. they are the most fun part of the game
 better player sprite
 
-enemy no highlight on pause
 +3 actions instead of +2 when killing enemy
 	will have to change powerup
-immune to enemies when going through portal//
+immune to enemies when going through portal

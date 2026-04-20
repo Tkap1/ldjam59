@@ -1308,7 +1308,7 @@ func void render(float interp_dt, float delta)
 					s_v3 pos = lerp_v3(entity->prev_pos, entity->pos, interp_dt);
 					pos.y += c_enemy_size.y * 0.5f;
 					s_v4 color = make_rrr(0.7f);
-					if(v3_distance(player.pos, entity->pos) <= c_player_range) {
+					if(!do_menu_background && v3_distance(player.pos, entity->pos) <= c_player_range) {
 						color = make_rrr(1.5f);
 					}
 
