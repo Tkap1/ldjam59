@@ -519,6 +519,10 @@ func void update()
 			entity_manager_reset(entity_arr, type_i);
 		}
 
+		for(int i = 0; i < c_map_count; i += 1) {
+			hard_data->level_seed[i] = randu64(&game->rng);
+		}
+
 		game->music_speed.target = 1;
 	}
 	if(game->do_soft_reset) {
@@ -535,6 +539,8 @@ func void update()
 			reset_player_pos(&player);
 			entity_manager_add(&soft_data->entity_arr, e_entity_player, player);
 		}
+
+		soft_data->rng = make_rng(hard_data->level_seed[hard_data->current_map]);
 
 		load_map(hard_data->current_map);
 	}
@@ -724,7 +730,7 @@ func void update()
 				s_entity* entity = &entity_arr->data[i];
 				if(entity->pickup_type == e_pickup_spike) {
 					if(float_equals(entity->dir.x, 0.0f)) {
-						entity->dir.x = 1;
+						entity->dir.x = rand_minus_1_or_1(&soft_data->rng);
 					}
 					if(do_a_turn) {
 						s_v3 new_pos = entity->target_pos;
@@ -751,7 +757,7 @@ func void update()
 				target_pos.y = 0;
 				s_v3 source_pos = entity->pos;
 				source_pos.y = 0;
-				entity->pos = go_towards_v3(source_pos, target_pos, delta);
+				entity->pos = go_towards_v3(source_pos, target_pos, delta * entity->speed);
 
 				float distance = v3_distance(source_pos, target_pos);
 				if(distance <= c_enemy_range) {
@@ -2277,7 +2283,6 @@ func void load_map(int index)
 
 	game->hard_data.current_map = index;
 
-
 	for_enum(type_i, e_entity) {
 		if(type_i != e_entity_player) {
 			entity_manager_reset(&game->soft_data.entity_arr, type_i);
@@ -2305,6 +2310,11 @@ func void load_map(int index)
 					entity.is_fence = editor_entity.sub_type == 1;
 				}
 				s_v3 pos = v3(x, 0.0f, -y);
+				if(editor_entity.type == e_entity_enemy) {
+					pos.x += randf32_11(&game->soft_data.rng) * 0.1f;
+					pos.z += randf32_11(&game->soft_data.rng) * 0.1f;
+					entity.speed = randf_range(&game->soft_data.rng, 0.9f, 1.1f);
+				}
 				entity.target_pos = pos;
 				teleport_entity(&entity, pos);
 				entity_manager_add(&game->soft_data.entity_arr, editor_entity.type, entity);

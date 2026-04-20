@@ -202,6 +202,7 @@ struct s_entity
 
 		// @Note(tkap, 04/10/2025): Enemy
 		struct {
+			float speed;
 			float animation_time;
 		};
 
@@ -308,6 +309,8 @@ struct s_soft_game_data
 
 	int num_free_actions;
 
+	s_rng rng;
+
 	s_transition fail_action_effect;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;
@@ -317,6 +320,8 @@ struct s_hard_game_data
 {
 	int update_count;
 	int current_map;
+
+	s_array<u64, c_map_count> level_seed;
 
 	s_transition map_win_transition;
 };
