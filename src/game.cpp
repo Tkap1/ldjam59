@@ -2358,6 +2358,14 @@ func void start_losing(float delay)
 		game->soft_data.lose_timestamp = maybe(soft_update_time);
 		game->soft_data.lose_delay = delay;
 		play_sound_at_speed(e_sound_death, get_rand_sound_speed(1.1f, &game->rng));
+
+		{
+			s_entity* player = get_player();
+			s_v3 pos = player->target_pos;
+			pos.y += c_player_size.y * 0.5f;
+			s_entity emitter = make_player_death_particles(pos);
+			add_emitter(emitter);
+		}
 	}
 }
 
@@ -2538,6 +2546,30 @@ func s_entity make_enemy_death_particles(s_v3 pos)
 	b.spawn_type = e_emitter_spawn_type_circle;
 	b.spawn_data.x = 0.25f;
 	b.particle_count = 128;
+
+	s_entity emitter = zero;
+	emitter.emitter_a = a;
+	emitter.emitter_b = b;
+	return emitter;
+}
+
+func s_entity make_player_death_particles(s_v3 pos)
+{
+	s_particle_emitter_a a = make_emitter_a();
+	a.radius = 0.03f;
+	a.speed = 4.0f;
+	a.particle_duration = 0.5f;
+	a.radius_rand = 0.5f;
+	a.speed_rand = 0.5f;
+	a.particle_duration_rand = 0.5f;
+	a.dir = v3(1, 1, 1);
+	a.dir_rand = v3(1, 1, 1);
+	a.color_arr[0].color = make_rgb(1.0f, 0.1f, 0.1f);
+	a.pos = pos;
+	s_particle_emitter_b b = make_emitter_b();
+	b.spawn_type = e_emitter_spawn_type_circle;
+	b.spawn_data.x = 0.25f;
+	b.particle_count = 256;
 
 	s_entity emitter = zero;
 	emitter.emitter_a = a;

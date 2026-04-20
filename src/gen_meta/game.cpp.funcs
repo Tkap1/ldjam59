@@ -57,6 +57,7 @@ func b8 will_teleport_soon();
 func float get_transition_percent(float time_now, s_transition t);
 func s_entity make_end_particles(s_v3 pos);
 func s_entity make_enemy_death_particles(s_v3 pos);
+func s_entity make_player_death_particles(s_v3 pos);
 func s_v2i get_enemy_animation_frame(float time);
 func s_entity make_sword_particles(s_v3 pos);
 #if defined(__clang__)

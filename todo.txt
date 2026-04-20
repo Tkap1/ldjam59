@@ -49,10 +49,11 @@ particles
 music
 instead of "NOW" display a green light when you can act, red when not?
 JUICE
+stop rendering meshes far away
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
+maybe we can move all of the die/win stuff to the end of the frame?? idk
 
-death particles
 walk sound?
 switch lane sound?
 killing enemy gives you +2 free actions? capped
