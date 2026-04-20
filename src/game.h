@@ -304,6 +304,8 @@ struct s_soft_game_data
 	s_v2 teleport_destination;
 	float lose_delay;
 
+	int num_free_actions;
+
 	s_transition fail_action_effect;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;

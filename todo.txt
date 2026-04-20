@@ -54,5 +54,4 @@ stop rendering meshes far away
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk
 
-killing enemy gives you +2 free actions? capped
 introduce enmies earlier. they are the most fun part of the game
