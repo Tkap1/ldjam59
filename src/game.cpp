@@ -782,7 +782,16 @@ func void update()
 				entity->pos = go_towards_v3(source_pos, target_pos, delta * entity->speed);
 
 				float distance = v3_distance(source_pos, target_pos);
-				if(distance <= c_enemy_range) {
+
+				b8 player_is_immune = false;
+				if(soft_data->teleported_timestamp.active) {
+					player_is_immune = true;
+					s_time_data data = time_data_from_transition(soft_update_time, soft_data->teleported_timestamp);
+					if(data.percent >= 1) {
+						soft_data->teleported_timestamp = zero;
+					}
+				}
+				if(distance <= c_enemy_range && !player_is_immune) {
 					start_losing(0.0f);
 				}
 			}
@@ -831,6 +840,14 @@ func void update()
 							other->last_teleport_timestamp = maybe(soft_update_time);
 
 							play_sound_at_speed(e_sound_teleport, get_rand_sound_speed(1.1f, &game->rng));
+
+							{
+								s_transition t = zero;
+								t.active = true;
+								t.timestamp = soft_update_time;
+								t.duration = 1.0f;
+								soft_data->teleported_timestamp = t;
+							}
 
 							{
 								s_v3 pos_arr[] = {
@@ -2926,4 +2943,11 @@ func void draw_game_title()
 func void maybe_set_free_actions_to(int wanted)
 {
 	game->soft_data.num_free_actions = at_least(wanted, game->soft_data.num_free_actions);
+}
+
+func s_time_data time_data_from_transition(float current_time, s_transition transition)
+{
+	assert(transition.active);
+	s_time_data time_data = get_time_data(current_time, transition.timestamp, transition.duration);
+	return time_data;
 }

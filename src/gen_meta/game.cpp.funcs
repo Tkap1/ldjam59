@@ -66,6 +66,7 @@ func s_v2i get_enemy_animation_frame(float time);
 func s_entity make_sword_particles(s_v3 pos);
 func void draw_game_title();
 func void maybe_set_free_actions_to(int wanted);
+func s_time_data time_data_from_transition(float current_time, s_transition transition);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif

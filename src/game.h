@@ -312,6 +312,7 @@ struct s_soft_game_data
 	s_rng rng;
 
 	s_transition fail_action_effect;
+	s_transition teleported_timestamp;
 
 	s_list<s_timed_msg, 8> timed_msg_arr;
 };
