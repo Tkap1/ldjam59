@@ -65,6 +65,7 @@ func s_entity make_player_death_particles(s_v3 pos);
 func s_v2i get_enemy_animation_frame(float time);
 func s_entity make_sword_particles(s_v3 pos);
 func void draw_game_title();
+func void maybe_set_free_actions_to(int wanted);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif

@@ -322,6 +322,9 @@ func void input()
 						game->saving_or_loading_map = maybe((int)e_load);
 						#endif
 					}
+					else if(scancode == SDL_SCANCODE_K && !is_repeat) {
+						soft_data->want_to_attack_timestamp = maybe(soft_update_time);
+					}
 					else if(scancode == SDL_SCANCODE_SPACE && !is_repeat) {
 						soft_data->want_to_jump_timestamp = maybe(soft_update_time);
 					}
@@ -471,6 +474,10 @@ func void input()
 					int key = c_left_button;
 					game->input_arr[key].is_down = event.type == SDL_MOUSEBUTTONDOWN;
 					game->input_arr[key].half_transition_count += 1;
+
+					if(event.type == SDL_MOUSEBUTTONDOWN) {
+						soft_data->want_to_attack_timestamp = maybe(soft_update_time);
+					}
 				}
 
 				else if(event.button.button == 3) {
@@ -662,7 +669,7 @@ func void update()
 						soft_data->last_attack_timestamp = maybe(game->render_time);
 						if(enemy.valid) {
 							kill_enemy(enemy.value);
-							game->soft_data.num_free_actions = 2;
+							maybe_set_free_actions_to(4);
 							play_sound_at_speed(rand_bool(&game->rng) ? e_sound_kill1 : e_sound_kill2, get_rand_sound_speed(1.1f, &game->rng));
 						}
 						else {
@@ -785,7 +792,7 @@ func void update()
 				{
 					s_maybe<int> powerup = get_plus_2_actions_at_tile(player_tile);
 					if(powerup.valid) {
-						soft_data->num_free_actions = 2;
+						maybe_set_free_actions_to(2);
 						{
 							s_v3 pos = entity_arr->data[powerup.value].pos;
 							s_entity emitter = make_plus_2_action_particles(pos + v3(0, 0.25f, 0));
@@ -1500,7 +1507,7 @@ func void render(float interp_dt, float delta)
 					s_len_str str = format_text(
 						"Press {%i} to attack\n\n"
 						"Killing an enemy allows you to\n"
-						"perform 2 extra actions\n"
+						"perform 3 extra actions\n"
 						"without waiting for\n"
 						"the signal",
 						c
@@ -2910,4 +2917,9 @@ func s_entity make_sword_particles(s_v3 pos)
 func void draw_game_title()
 {
 	draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_rrr(1), true, &game->font, zero, 0);
+}
+
+func void maybe_set_free_actions_to(int wanted)
+{
+	game->soft_data.num_free_actions = at_least(wanted, game->soft_data.num_free_actions);
 }
