@@ -47,10 +47,8 @@ make new leaderboard
 shadows?
 particles
 music
-instead of "NOW" display a green light when you can act, red when not?
 JUICE
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk
-
-introduce enmies earlier. they are the most fun part of the game
+introduce enemies earlier. they are the most fun part of the game

@@ -1562,6 +1562,22 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true, 0);
 			}
 
+
+			{
+				if(!will_win_soon() && soft_data->draw_signal) {
+					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(1, 5), make_rrr(1.0f), 0);
+				}
+				else {
+					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(2, 5), make_rrr(1.0f), 0);
+				}
+				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+				data.fbo = game->game_fbo;
+				data.projection = ortho;
+				data.blend_mode = e_blend_mode_normal;
+				data.depth_mode = e_depth_mode_no_read_yes_write;
+				render_flush(data, true, 0);
+			}
+
 			{
 				float transition_time = get_transition_percent(game->render_time, hard_data->map_win_transition);
 				e_shader shader = e_shader_flat;
@@ -1573,15 +1589,6 @@ func void render(float interp_dt, float delta)
 				data.transition_time = transition_time;
 				data.projection = ortho;
 				data.blend_mode = e_blend_mode_disabled;
-				data.depth_mode = e_depth_mode_no_read_no_write;
-				render_flush(data, true, 0);
-			}
-
-			if(!will_win_soon() && soft_data->draw_signal) {
-				draw_text(S("NOW"), wxy(0.5f, 0.1f), 64, make_rrr(1), true, &game->font, zero, 0);
-				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-				data.projection = ortho;
-				data.blend_mode = e_blend_mode_normal;
 				data.depth_mode = e_depth_mode_no_read_no_write;
 				render_flush(data, true, 0);
 			}
