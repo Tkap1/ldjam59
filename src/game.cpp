@@ -134,7 +134,7 @@ m_dll_export void init(s_platform_data* platform_data)
 	load_or_create_leaderboard_id();
 	#endif
 
-	// play_sound(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
+	play_sound_ex(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
 }
 
 m_dll_export void init_after_recompile(s_platform_data* platform_data)
@@ -1747,13 +1747,13 @@ func void render(float interp_dt, float delta)
 		}
 	}
 
-	// {
-	// 	do_lerpable_snap(&game->music_speed, delta * 2.0f, 0.01f);
-	// 	s_active_sound* music = find_playing_sound(e_sound_music);
-	// 	if(music) {
-	// 		music->data.speed = game->music_speed.curr;
-	// 	}
-	// }
+	{
+		do_lerpable_snap(&game->music_speed, delta * 2.0f, 0.01f);
+		s_active_sound* music = find_playing_sound(e_sound_music);
+		if(music) {
+			music->data.speed = game->music_speed.curr;
+		}
+	}
 
 	SDL_GL_SwapWindow(g_platform_data->window);
 

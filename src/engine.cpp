@@ -1191,19 +1191,19 @@ func void pre_render(float delta)
 	bind_framebuffer(0);
 	clear_framebuffer_depth(0);
 
-	// {
-	// 	if(game->disable_music) {
-	// 		game->music_volume.target = 0;
-	// 	}
-	// 	else {
-	// 		game->music_volume.target = 1;
-	// 	}
-	// 	do_lerpable_snap(&game->music_volume, delta * 5, 0.01f);
-	// 	s_active_sound* music = find_playing_sound(e_sound_music);
-	// 	if(music) {
-	// 		music->data.volume = game->music_volume.curr;
-	// 	}
-	// }
+	{
+		if(game->disable_music) {
+			game->music_volume.target = 0;
+		}
+		else {
+			game->music_volume.target = 1;
+		}
+		do_lerpable_snap(&game->music_volume, delta * 5, 0.01f);
+		s_active_sound* music = find_playing_sound(e_sound_music);
+		if(music) {
+			music->data.volume = game->music_volume.curr;
+		}
+	}
 
 }
 
