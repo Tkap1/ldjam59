@@ -50,5 +50,4 @@ add a lil randomness so that speedrunning is not just about remembering a key se
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk
 introduce enemies earlier. they are the most fun part of the game
-
-maybe move back on input fail?
+better player sprite

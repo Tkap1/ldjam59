@@ -46,6 +46,7 @@ func s_maybe<int> get_plus_2_actions_at_tile(s_v2i index);
 func s_entity* get_teleport_at_tile(s_v2i index);
 func s_maybe<int> get_pickup_at_tile(s_v2i index, e_pickup pickup_type);
 func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you);
+func void move_backwards(s_entity* player);
 func void jump_forward(s_entity* player);
 func b8 check_for_win(s_v3 pos);
 func b8 will_win_soon();

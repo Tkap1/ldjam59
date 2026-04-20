@@ -681,6 +681,7 @@ func void update()
 						soft_data->fail_action_effect = t;
 					}
 					soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
+					move_backwards(player);
 				}
 
 				if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
@@ -693,7 +694,6 @@ func void update()
 				if(wanted_to_perform_action && soft_data->num_free_actions > 0) {
 					soft_data->next_action_time = soft_update_time - (float)c_update_delay;
 					soft_data->num_free_actions -= 1;
-					do_a_turn = false;
 				}
 
 				if(!wanted_to_perform_action && soft_data->num_free_actions > 0) {
@@ -1497,7 +1497,6 @@ func void render(float interp_dt, float delta)
 				}
 
 				else if(hard_data->current_map == 7) {
-					char c = scancode_to_char(SDL_SCANCODE_F);
 					s_len_str str = format_text(
 						"Powerups allow you to\n"
 						"perform 2 extra actions\n"
@@ -2497,6 +2496,32 @@ func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you)
 	}
 
 	if((does_walking_into_wall_kill_you || is_fence) && wall) {
+		start_losing(c_action_interval * 1.1f);
+	}
+}
+
+func void move_backwards(s_entity* player)
+{
+	s_entity* wall = null;
+	{
+		s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(0, 0, 1));
+		wall = get_wall_at_tile(player_tile);
+	}
+
+	b8 is_fence = false;
+	if(wall) {
+		is_fence = wall->is_fence;
+	}
+	else {
+		s_v2i player_tile = tile_index_from_3d(player->target_pos);
+		if(player_tile.y != 0) {
+			s_v3 target_pos = player->target_pos;
+			target_pos.z += 1;
+			player->target_pos = target_pos;
+		}
+	}
+
+	if(is_fence) {
 		start_losing(c_action_interval * 1.1f);
 	}
 }
