@@ -10,7 +10,7 @@ global constexpr int c_map_version = 1;
 global constexpr int c_map_count = 20;
 global constexpr float c_player_range = 1;
 global constexpr float c_enemy_range = 0.2f;
-global constexpr float c_teleport_cooldown = 1.0f;
+global constexpr float c_teleport_cooldown = 99999;
 global constexpr float c_win_transition_duration = c_action_interval * 2;
 global constexpr s_v2 c_enemy_size = {0.5f, 0.5f};
 

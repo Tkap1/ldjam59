@@ -687,7 +687,7 @@ func void update()
 						soft_data->fail_action_effect = t;
 					}
 					soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
-					move_backwards(player);
+					// move_backwards(player);
 				}
 
 				if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
@@ -733,14 +733,27 @@ func void update()
 						entity->dir.x = rand_minus_1_or_1(&soft_data->rng);
 					}
 					if(do_a_turn) {
-						s_v3 new_pos = entity->target_pos;
-						new_pos.x += entity->dir.x;
-						s_v2i index = tile_index_from_3d(new_pos);
-						s_entity* wall = get_wall_at_tile(index);
-						if(wall) {
-							entity->dir.x *= -1;
+						s_v3 pos_left = entity->target_pos;
+						pos_left.x -= 1;
+						s_v3 pos_right = entity->target_pos;
+						pos_right.x += 1;
+						s_v2i index_left = tile_index_from_3d(pos_left);
+						s_v2i index_right = tile_index_from_3d(pos_right);
+						s_entity* wall_left = get_wall_at_tile(index_left);
+						s_entity* wall_right = get_wall_at_tile(index_right);
+						if(wall_left && wall_right) {
+
 						}
-						entity->target_pos.x += entity->dir.x;
+						else {
+							s_v3 new_pos = entity->target_pos;
+							new_pos.x += entity->dir.x;
+							s_v2i index = tile_index_from_3d(new_pos);
+							s_entity* wall = get_wall_at_tile(index);
+							if(wall) {
+								entity->dir.x *= -1;
+							}
+							entity->target_pos.x += entity->dir.x;
+						}
 					}
 					entity->pos = lerp_v3(entity->pos, entity->target_pos, delta * 10);
 				}
