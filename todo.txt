@@ -31,12 +31,8 @@ Sounds: Tkap & opengameart
 Music: TeknoAXE
 ----------------------------------------------------------------------------------------------------------------------------------
 
-map8 pickup
-
 // TOP PRIORITY
 LEVELS
-tutorial
-	mention that killing an enemy gives you +2 free actions
 
 shadows?
 JUICE

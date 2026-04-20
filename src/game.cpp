@@ -779,7 +779,24 @@ func void update()
 				target_pos.y = 0;
 				s_v3 source_pos = entity->pos;
 				source_pos.y = 0;
-				entity->pos = go_towards_v3(source_pos, target_pos, delta * entity->speed);
+
+				s_v3 dir = target_pos - source_pos;
+				s_v3 dir_n = v3_normalized(dir);
+				float speed = delta * entity->speed;
+				for(int axis_i = 0; axis_i < 3; axis_i += 1) {
+					float before = entity->pos.all[axis_i];
+					entity->pos.all[axis_i] = go_towards(source_pos.all[axis_i], target_pos.all[axis_i], speed * fabsf(dir_n.all[axis_i]));
+					s_v3 temp_pos = entity->pos;
+					temp_pos.x += 0.5f;
+					temp_pos.z += 0.5f;
+					s_v2i tile = tile_index_from_3d(temp_pos);
+					if(get_wall_at_tile(tile)) {
+						entity->pos.all[axis_i] = before;
+					}
+				}
+
+				source_pos = entity->pos;
+				source_pos.y = 0;
 
 				float distance = v3_distance(source_pos, target_pos);
 
