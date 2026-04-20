@@ -134,6 +134,8 @@ m_dll_export void init(s_platform_data* platform_data)
 	load_or_create_leaderboard_id();
 	#endif
 
+	load_map(0);
+
 	play_sound_ex(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
 }
 
@@ -854,13 +856,35 @@ func void render(float interp_dt, float delta)
 	s_soft_game_data* soft_data = &game->soft_data;
 	auto entity_arr = &soft_data->entity_arr;
 
+	float menu_background_white = 0.5f;
+	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
+	b8 do_menu_background = false;
+	if(state0 == e_game_state0_main_menu || state0 == e_game_state0_pause) {
+		do_menu_background = true;
+	}
+	else if(
+		state0 == e_game_state0_leaderboard || state0 == e_game_state0_win_leaderboard ||
+		state0 == e_game_state0_options || state0 == e_game_state0_input_name
+	) {
+		menu_background_white = 0.25f;
+		do_menu_background = true;
+	}
+
 	float soft_update_time = soft_data->update_count * (float)c_update_delay;
 
 	s_entity player = entity_arr->data[0];
 	s_v3 player_pos = lerp_v3(player.prev_pos, player.pos, interp_dt);
 
 	s_m4 ortho = make_orthographic(0, c_world_size.x, c_world_size.y, 0, -100, 100);
-	s_m4 view_3d = look_at(player_pos + v3(0, 2, 3), player_pos, c_y_axis);
+	s_m4 view_3d;
+	if(do_menu_background) {
+		s_v3 eye = v3(2, 1, 1);
+		s_v3 dir = v3_normalized(v3(0, -0.2f, -1));
+		view_3d = look_at(eye, eye + dir, c_y_axis);
+	}
+	else {
+		view_3d = look_at(player_pos + v3(0, 2, 3), player_pos, c_y_axis);
+	}
 	s_m4 perspective = make_perspective(45.0f, c_aspect_ratio, 0.01f, 100.0f);
 	s_m4 view_2d = m4_translate(v3(-game->editor.cam_pos.x, -game->editor.cam_pos.y, 0.0f));
 	s_m4 view_inv = m4_inverse(view_2d);
@@ -873,10 +897,7 @@ func void render(float interp_dt, float delta)
 	clear_framebuffer_color(game->game_fbo.id, v4(0, 0, 0, 0));
 	clear_framebuffer_depth(game->game_fbo.id);
 
-	e_game_state0 state0 = (e_game_state0)get_state(&game->state0);
-
 	b8 should_do_game = false;
-	b8 do_defeat = false;
 
 	float wanted_speed = get_wanted_game_speed(interp_dt);
 
@@ -888,231 +909,13 @@ func void render(float interp_dt, float delta)
 	b8 should_do_play = state0 == e_game_state0_play;
 	b8 should_do_input_name_menu = state0 == e_game_state0_input_name;
 
-	if(should_do_main_menu) {
-		game->speed = 0;
-		game->music_speed.target = 1;
-
-		if(do_button(S("Play"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
-			add_state_transition(&game->state0, e_game_state0_play, game->render_time, c_transition_time);
-			game->do_hard_reset = true;
-		}
-
-		if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true) == e_button_result_left_click) {
-			#if defined(__EMSCRIPTEN__) || defined(m_winhttp)
-			get_leaderboard(c_leaderboard_id);
-			#endif
-			add_state_transition(&game->state0, e_game_state0_leaderboard, game->render_time, c_transition_time);
-		}
-
-		if(do_button(S("Options"), wxy(0.5f, 0.7f), true) == e_button_result_left_click) {
-			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
-		}
-
-		draw_game_title();
-		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
-
-		if(c_on_web) {
-			s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
-			draw_text(S("Go fullscreen!\n             V"), wxy(0.9f, 0.93f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero, 0);
-		}
-
-		{
-			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-			data.projection = ortho;
-			data.blend_mode = e_blend_mode_normal;
-			data.depth_mode = e_depth_mode_no_read_yes_write;
-			render_flush(data, true, 0);
-		}
-	}
-
-	if(should_do_pause_menu) {
-		game->speed = 0;
-		game->music_speed.target = 1;
-
-		if(do_button(S("Resume"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
-			pop_state_transition(&game->state0, game->render_time, c_transition_time);
-		}
-
-		if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true) == e_button_result_left_click) {
-			#if defined(__EMSCRIPTEN__)
-			get_leaderboard(c_leaderboard_id);
-			#endif
-			add_state_transition(&game->state0, e_game_state0_leaderboard, game->render_time, c_transition_time);
-		}
-
-		if(do_button(S("Options"), wxy(0.5f, 0.7f), true) == e_button_result_left_click) {
-			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
-		}
-
-		draw_game_title();
-		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
-
-		{
-			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-			data.projection = ortho;
-			data.blend_mode = e_blend_mode_normal;
-			data.depth_mode = e_depth_mode_no_read_yes_write;
-			render_flush(data, true, 0);
-		}
-	}
-
-	if(should_do_leaderboard_menu) {
-		game->speed = 0;
-		game->music_speed.target = 1;
-		do_leaderboard();
-	}
-
-	if(should_do_win_leaderboard_menu) {
-
-		{
-			s_time_format data = update_count_to_time_format(game->update_count_at_win_time, false);
-			s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
-			draw_text(text, c_world_center * v2(1.0f, 0.2f), 64, make_rrr(1), true, &game->font, zero, 0);
-
-			draw_text(S("Press R to restart..."), c_world_center * v2(1.0f, 0.4f), sin_range(48, 60, game->render_time * 8.0f), make_rrr(0.66f), true, &game->font, zero, 0);
-		}
-
-		b8 want_to_reset = is_key_pressed(SDLK_r, true);
-		if(
-			do_button(S("Restart"), c_world_size * v2(0.87f, 0.82f), true) == e_button_result_left_click
-			|| is_key_pressed(SDLK_ESCAPE, true) || want_to_reset
-		) {
-			pop_state_transition(&game->state0, game->render_time, c_transition_time);
-			game->do_hard_reset = true;
-		}
-
-		{
-			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-			data.projection = ortho;
-			data.blend_mode = e_blend_mode_normal;
-			data.depth_mode = e_depth_mode_no_read_yes_write;
-			render_flush(data, true, 0);
-		}
-	}
-
-	if(should_do_leaderboard_menu) {
-		s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-		data.projection = ortho;
-		data.blend_mode = e_blend_mode_normal;
-		data.depth_mode = e_depth_mode_no_read_yes_write;
-		render_flush(data, true, 0);
-	}
-
-	if(should_do_options_menu) {
-		game->speed = 0;
-		game->music_speed.target = 1;
-
-		s_v2 button_size = v2(600, 48);
-		s_container container = make_down_center_x_container(make_rect(wxy(0.0f, 0.05f), c_world_size), button_size, 32);
-
-		do_basic_options(&container, button_size);
-
-		{
-			s_len_str text = format_text("Lights: %s", game->disable_lights ? "Off" : "On");
-			do_bool_button_ex(text, container_get_pos_and_advance(&container), button_size, false, &game->disable_lights);
-		}
-
-		b8 escape = is_key_pressed(SDLK_ESCAPE, true);
-		if(do_button(S("Back"), wxy(0.87f, 0.92f), true) == e_button_result_left_click || escape) {
-			pop_state_transition(&game->state0, game->render_time, c_transition_time);
-		}
-
-		{
-			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-			data.projection = ortho;
-			data.blend_mode = e_blend_mode_normal;
-			data.depth_mode = e_depth_mode_no_read_yes_write;
-			render_flush(data, true, 0);
-		}
-	}
-
 	if(should_do_play) {
 		game->speed = wanted_speed;
 		game->music_speed.target = 1;
 		should_do_game = true;
 	}
 
-	if(should_do_input_name_menu) {
-		game->speed = 0;
-		game->music_speed.target = 1;
-		s_input_name_state* state = &game->input_name_state;
-		float font_size = 36;
-		s_v2 pos = c_world_size * v2(0.5f, 0.4f);
-
-		int count_before = state->name.str.count;
-		b8 submitted = handle_string_input(&state->name, game->render_time);
-		int count_after = state->name.str.count;
-		if(count_before != count_after) {
-			play_sound(e_sound_key);
-		}
-		if(submitted) {
-			b8 can_submit = true;
-			if(state->name.str.count < 2) {
-				can_submit = false;
-				cstr_into_builder(&state->error_str, "Name must have at least 2 characters!");
-			}
-			if(can_submit) {
-				state->error_str.count = 0;
-				#if defined(__EMSCRIPTEN__)
-				set_leaderboard_name(builder_to_len_str(&state->name.str));
-				#endif
-				{
-					s_len_str temp = builder_to_len_str(&state->name.str);
-					game->leaderboard_nice_name.count = 0;
-					builder_add(&game->leaderboard_nice_name, "%.*s", expand_str(temp));
-				}
-			}
-		}
-
-		draw_text(S("Victory!"), c_world_size * v2(0.5f, 0.1f), font_size, make_rrr(1), true, &game->font, zero, 0);
-		draw_text(S("Enter your name"), c_world_size * v2(0.5f, 0.2f), font_size, make_rrr(1), true, &game->font, zero, 0);
-		if(state->error_str.count > 0) {
-			draw_text(builder_to_len_str(&state->error_str), c_world_size * v2(0.5f, 0.3f), font_size, hex_to_rgb(0xD77870), true, &game->font, zero, 0);
-		}
-
-		if(state->name.str.count > 0) {
-			draw_text(builder_to_len_str(&state->name.str), pos, font_size, make_rrr(1), true, &game->font, zero, 0);
-		}
-
-		s_v2 full_text_size = get_text_size(builder_to_len_str(&state->name.str), &game->font, font_size);
-		s_v2 partial_text_size = get_text_size_with_count(builder_to_len_str(&state->name.str), &game->font, font_size, state->name.cursor.value, 0);
-		s_v2 cursor_pos = v2(
-			-full_text_size.x * 0.5f + pos.x + partial_text_size.x,
-			pos.y - font_size * 0.5f
-		);
-
-		s_v2 cursor_size = v2(15.0f, font_size);
-		float t = game->render_time - max(state->name.last_action_time, state->name.last_edit_time);
-		b8 blink = false;
-		constexpr float c_blink_rate = 0.75f;
-		if(t > 0.75f && fmodf(t, c_blink_rate) >= c_blink_rate / 2) {
-			blink = true;
-		}
-		float t2 = clamp(game->render_time - state->name.last_edit_time, 0.0f, 1.0f);
-		s_v4 color = lerp_color(hex_to_rgb(0xffdddd), multiply_rgb_clamped(hex_to_rgb(0xABC28F), 0.8f), 1 - powf(1 - t2, 3));
-		float extra_height = ease_out_elastic2_advanced(t2, 0, 0.75f, 20, 0);
-		cursor_size.y += extra_height;
-
-		if(!state->name.visual_pos_initialized) {
-			state->name.visual_pos_initialized = true;
-			state->name.cursor_visual_pos = cursor_pos;
-		}
-		else {
-			state->name.cursor_visual_pos = lerp_snap(state->name.cursor_visual_pos, cursor_pos, delta * 20);
-		}
-
-		if(!blink) {
-			draw_rect_topleft(state->name.cursor_visual_pos - v2(0.0f, extra_height / 2), cursor_size, color, 0);
-		}
-
-		s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-		data.projection = ortho;
-		data.blend_mode = e_blend_mode_normal;
-		data.depth_mode = e_depth_mode_no_read_no_write;
-		render_flush(data, true, 0);
-	}
-
-	if(should_do_game) {
+	if(should_do_game || do_menu_background) {
 
 		b8 do_game_ui = true;
 
@@ -1252,7 +1055,7 @@ func void render(float interp_dt, float delta)
 
 			{
 				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-				{
+				if(!do_menu_background) {
 					s_v3 pos = player_pos;
 					if(player.is_jumping.valid) {
 						float passed = update_time_to_render_time(soft_update_time, interp_dt) - player.is_jumping.value;
@@ -1563,7 +1366,7 @@ func void render(float interp_dt, float delta)
 			}
 
 
-			{
+			if(!do_menu_background) {
 				if(!will_win_soon() && soft_data->draw_signal) {
 					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(1, 5), make_rrr(1.0f), 0);
 				}
@@ -1592,6 +1395,15 @@ func void render(float interp_dt, float delta)
 				data.depth_mode = e_depth_mode_no_read_no_write;
 				render_flush(data, true, 0);
 			}
+		}
+
+		if(do_menu_background) {
+			draw_rect(c_world_center, c_world_size, make_rrr(menu_background_white), 0);
+			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_multiply;
+			data.depth_mode = e_depth_mode_no_read_no_write;
+			render_flush(data, true, 0);
 		}
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		lights start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -1638,7 +1450,7 @@ func void render(float interp_dt, float delta)
 		}
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw fct end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		if(do_game_ui) {
+		if(do_game_ui && !do_menu_background) {
 
 			s_rect rect = {
 				4, 4, 4, 4
@@ -1671,26 +1483,26 @@ func void render(float interp_dt, float delta)
 			// }
 		}
 
-		if(game->tooltip.count > 0) {
-			float font_size = 32;
-			s_v2 size = get_text_size(game->tooltip, &game->font, font_size);
-			s_v2 rect_pos = zero;
-			rect_pos -= v2(8);
-			size += v2(16);
-			rect_pos = topleft_to_bottomleft_mouse(rect_pos, size, g_mouse);
-			rect_pos = prevent_offscreen(rect_pos, size);
-			s_v2 text_pos = rect_pos + v2(8);
-			draw_rect_topleft(rect_pos, size, make_ra(0.1f, 0.95f), 0);
-			draw_text(game->tooltip, text_pos, font_size, make_rrr(1), false, &game->font, zero, 0);
-			{
-				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-				data.projection = ortho;
-				data.blend_mode = e_blend_mode_normal;
-				data.depth_mode = e_depth_mode_no_read_no_write;
-				render_flush(data, true, 0);
-			}
-		}
-		game->tooltip = zero;
+		// if(game->tooltip.count > 0) {
+		// 	float font_size = 32;
+		// 	s_v2 size = get_text_size(game->tooltip, &game->font, font_size);
+		// 	s_v2 rect_pos = zero;
+		// 	rect_pos -= v2(8);
+		// 	size += v2(16);
+		// 	rect_pos = topleft_to_bottomleft_mouse(rect_pos, size, g_mouse);
+		// 	rect_pos = prevent_offscreen(rect_pos, size);
+		// 	s_v2 text_pos = rect_pos + v2(8);
+		// 	draw_rect_topleft(rect_pos, size, make_ra(0.1f, 0.95f), 0);
+		// 	draw_text(game->tooltip, text_pos, font_size, make_rrr(1), false, &game->font, zero, 0);
+		// 	{
+		// 		s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+		// 		data.projection = ortho;
+		// 		data.blend_mode = e_blend_mode_normal;
+		// 		data.depth_mode = e_depth_mode_no_read_no_write;
+		// 		render_flush(data, true, 0);
+		// 	}
+		// }
+		// game->tooltip = zero;
 
 		// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		cheat menu start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 		#if defined(m_debug)
@@ -1707,19 +1519,222 @@ func void render(float interp_dt, float delta)
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheat menu end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	}
 
-	if(do_defeat) {
+	if(should_do_main_menu) {
+		game->speed = 0;
+		game->music_speed.target = 1;
 
-		draw_rect_topleft(v2(0), c_world_size, make_ra(0, 0.75f), 0);
-		draw_text(S("Defeat"), wxy(0.5f, 0.4f) + rand_v2_11(&game->rng) * 8, 128, make_rgb(1, 0.2f, 0.2f), true, &game->font, zero, 0);
-		draw_text(S("Press R to try again"), wxy(0.5f, 0.55f), sin_range(48, 64, game->render_time * 8), make_rrr(1), true, &game->font, zero, 0);
+		if(do_button(S("Play"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
+			add_state_transition(&game->state0, e_game_state0_play, game->render_time, c_transition_time);
+			game->do_hard_reset = true;
+		}
+
+		if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true) == e_button_result_left_click) {
+			#if defined(__EMSCRIPTEN__) || defined(m_winhttp)
+			get_leaderboard(c_leaderboard_id);
+			#endif
+			add_state_transition(&game->state0, e_game_state0_leaderboard, game->render_time, c_transition_time);
+		}
+
+		if(do_button(S("Options"), wxy(0.5f, 0.7f), true) == e_button_result_left_click) {
+			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
+		}
+
+		draw_game_title();
+		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
+
+		if(c_on_web) {
+			s_v4 color = hsv_to_rgb(game->render_time * 360, 1, 1);
+			draw_text(S("Go fullscreen!\n             V"), wxy(0.9f, 0.93f), sin_range(32, 40, game->render_time * 8), color, true, &game->font, zero, 0);
+		}
 
 		{
 			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
 			data.projection = ortho;
 			data.blend_mode = e_blend_mode_normal;
-			data.depth_mode = e_depth_mode_no_read_no_write;
+			data.depth_mode = e_depth_mode_no_read_yes_write;
 			render_flush(data, true, 0);
 		}
+	}
+
+	if(should_do_pause_menu) {
+		game->speed = 0;
+		game->music_speed.target = 1;
+
+		if(do_button(S("Resume"), wxy(0.5f, 0.5f), true) == e_button_result_left_click || is_key_pressed(SDLK_RETURN, true)) {
+			pop_state_transition(&game->state0, game->render_time, c_transition_time);
+		}
+
+		if(do_button(S("Leaderboard"), wxy(0.5f, 0.6f), true) == e_button_result_left_click) {
+			#if defined(__EMSCRIPTEN__)
+			get_leaderboard(c_leaderboard_id);
+			#endif
+			add_state_transition(&game->state0, e_game_state0_leaderboard, game->render_time, c_transition_time);
+		}
+
+		if(do_button(S("Options"), wxy(0.5f, 0.7f), true) == e_button_result_left_click) {
+			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
+		}
+
+		draw_game_title();
+		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
+
+		{
+			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_yes_write;
+			render_flush(data, true, 0);
+		}
+	}
+
+	if(should_do_leaderboard_menu) {
+		game->speed = 0;
+		game->music_speed.target = 1;
+		do_leaderboard();
+	}
+
+	if(should_do_win_leaderboard_menu) {
+
+		{
+			s_time_format data = update_count_to_time_format(game->update_count_at_win_time, false);
+			s_len_str text = format_text("%02i:%02i.%03i", data.minutes, data.seconds, data.milliseconds);
+			draw_text(text, c_world_center * v2(1.0f, 0.2f), 64, make_rrr(1), true, &game->font, zero, 0);
+
+			draw_text(S("Press R to restart..."), c_world_center * v2(1.0f, 0.4f), sin_range(48, 60, game->render_time * 8.0f), make_rrr(0.66f), true, &game->font, zero, 0);
+		}
+
+		b8 want_to_reset = is_key_pressed(SDLK_r, true);
+		if(
+			do_button(S("Restart"), c_world_size * v2(0.87f, 0.82f), true) == e_button_result_left_click
+			|| is_key_pressed(SDLK_ESCAPE, true) || want_to_reset
+		) {
+			pop_state_transition(&game->state0, game->render_time, c_transition_time);
+			game->do_hard_reset = true;
+		}
+
+		{
+			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_yes_write;
+			render_flush(data, true, 0);
+		}
+	}
+
+	if(should_do_leaderboard_menu) {
+		s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+		data.projection = ortho;
+		data.blend_mode = e_blend_mode_normal;
+		data.depth_mode = e_depth_mode_no_read_yes_write;
+		render_flush(data, true, 0);
+	}
+
+	if(should_do_options_menu) {
+		game->speed = 0;
+		game->music_speed.target = 1;
+
+		s_v2 button_size = v2(600, 48);
+		s_container container = make_down_center_x_container(make_rect(wxy(0.0f, 0.05f), c_world_size), button_size, 32);
+
+		do_basic_options(&container, button_size);
+
+		{
+			s_len_str text = format_text("Lights: %s", game->disable_lights ? "Off" : "On");
+			do_bool_button_ex(text, container_get_pos_and_advance(&container), button_size, false, &game->disable_lights);
+		}
+
+		b8 escape = is_key_pressed(SDLK_ESCAPE, true);
+		if(do_button(S("Back"), wxy(0.87f, 0.92f), true) == e_button_result_left_click || escape) {
+			pop_state_transition(&game->state0, game->render_time, c_transition_time);
+		}
+
+		{
+			s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+			data.projection = ortho;
+			data.blend_mode = e_blend_mode_normal;
+			data.depth_mode = e_depth_mode_no_read_yes_write;
+			render_flush(data, true, 0);
+		}
+	}
+
+	if(should_do_input_name_menu) {
+		game->speed = 0;
+		game->music_speed.target = 1;
+		s_input_name_state* state = &game->input_name_state;
+		float font_size = 36;
+		s_v2 pos = c_world_size * v2(0.5f, 0.4f);
+
+		int count_before = state->name.str.count;
+		b8 submitted = handle_string_input(&state->name, game->render_time);
+		int count_after = state->name.str.count;
+		if(count_before != count_after) {
+			play_sound(e_sound_key);
+		}
+		if(submitted) {
+			b8 can_submit = true;
+			if(state->name.str.count < 2) {
+				can_submit = false;
+				cstr_into_builder(&state->error_str, "Name must have at least 2 characters!");
+			}
+			if(can_submit) {
+				state->error_str.count = 0;
+				#if defined(__EMSCRIPTEN__)
+				set_leaderboard_name(builder_to_len_str(&state->name.str));
+				#endif
+				{
+					s_len_str temp = builder_to_len_str(&state->name.str);
+					game->leaderboard_nice_name.count = 0;
+					builder_add(&game->leaderboard_nice_name, "%.*s", expand_str(temp));
+				}
+			}
+		}
+
+		draw_text(S("Victory!"), c_world_size * v2(0.5f, 0.1f), font_size, make_rrr(1), true, &game->font, zero, 0);
+		draw_text(S("Enter your name"), c_world_size * v2(0.5f, 0.2f), font_size, make_rrr(1), true, &game->font, zero, 0);
+		if(state->error_str.count > 0) {
+			draw_text(builder_to_len_str(&state->error_str), c_world_size * v2(0.5f, 0.3f), font_size, hex_to_rgb(0xD77870), true, &game->font, zero, 0);
+		}
+
+		if(state->name.str.count > 0) {
+			draw_text(builder_to_len_str(&state->name.str), pos, font_size, make_rrr(1), true, &game->font, zero, 0);
+		}
+
+		s_v2 full_text_size = get_text_size(builder_to_len_str(&state->name.str), &game->font, font_size);
+		s_v2 partial_text_size = get_text_size_with_count(builder_to_len_str(&state->name.str), &game->font, font_size, state->name.cursor.value, 0);
+		s_v2 cursor_pos = v2(
+			-full_text_size.x * 0.5f + pos.x + partial_text_size.x,
+			pos.y - font_size * 0.5f
+		);
+
+		s_v2 cursor_size = v2(15.0f, font_size);
+		float t = game->render_time - max(state->name.last_action_time, state->name.last_edit_time);
+		b8 blink = false;
+		constexpr float c_blink_rate = 0.75f;
+		if(t > 0.75f && fmodf(t, c_blink_rate) >= c_blink_rate / 2) {
+			blink = true;
+		}
+		float t2 = clamp(game->render_time - state->name.last_edit_time, 0.0f, 1.0f);
+		s_v4 color = lerp_color(hex_to_rgb(0xffdddd), multiply_rgb_clamped(hex_to_rgb(0xABC28F), 0.8f), 1 - powf(1 - t2, 3));
+		float extra_height = ease_out_elastic2_advanced(t2, 0, 0.75f, 20, 0);
+		cursor_size.y += extra_height;
+
+		if(!state->name.visual_pos_initialized) {
+			state->name.visual_pos_initialized = true;
+			state->name.cursor_visual_pos = cursor_pos;
+		}
+		else {
+			state->name.cursor_visual_pos = lerp_snap(state->name.cursor_visual_pos, cursor_pos, delta * 20);
+		}
+
+		if(!blink) {
+			draw_rect_topleft(state->name.cursor_visual_pos - v2(0.0f, extra_height / 2), cursor_size, color, 0);
+		}
+
+		s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+		data.projection = ortho;
+		data.blend_mode = e_blend_mode_normal;
+		data.depth_mode = e_depth_mode_no_read_no_write;
+		render_flush(data, true, 0);
 	}
 
 	s_state_transition transition = get_state_transition(&game->state0, game->render_time);

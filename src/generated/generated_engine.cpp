@@ -60,6 +60,7 @@ func void attrib_manager_finish(s_gl_attrib_manager* attrib_manager);
 func void engine_init(s_platform_data* platform_data);
 func f64 get_seconds();
 func void on_gl_error(const char* expr, char* file, int line, int error);
+func void draw_rect_ex(s_v2 pos, s_v2 size, s_v4 color, e_shader shader, int render_pass_index);
 func void draw_rect(s_v2 pos, s_v2 size, s_v4 color, int render_pass_index);
 func void draw_rect_3d(s_v3 pos, s_v2 size, s_v4 color, int render_pass_index);
 func void draw_billboard_ex(s_atlas atlas, s_v3 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data, int render_pass_index);
