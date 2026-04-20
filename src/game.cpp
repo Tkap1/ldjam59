@@ -669,6 +669,8 @@ func void update()
 						soft_data->last_attack_timestamp = maybe(game->render_time);
 						if(enemy.valid) {
 							kill_enemy(enemy.value);
+
+							// @Note(tkap, 20/04/2026): Has to be 1 higher than what we want because one of them is consumed right away because of the attack that kills the enemy
 							maybe_set_free_actions_to(4);
 							play_sound_at_speed(rand_bool(&game->rng) ? e_sound_kill1 : e_sound_kill2, get_rand_sound_speed(1.1f, &game->rng));
 						}
@@ -1503,14 +1505,16 @@ func void render(float interp_dt, float delta)
 				}
 
 				else if(hard_data->current_map == 3) {
-					char c = scancode_to_char(SDL_SCANCODE_F);
+					char c0 = scancode_to_char(SDL_SCANCODE_K);
+					char c1 = scancode_to_char(SDL_SCANCODE_F);
 					s_len_str str = format_text(
-						"Press {%i} to attack\n\n"
+						"Press left click/{%i}/{%i}\n"
+						"to attack\n\n"
 						"Killing an enemy allows you to\n"
 						"perform 3 extra actions\n"
 						"without waiting for\n"
 						"the signal",
-						c
+						c0, c1
 					);
 					s_v2 pos = wxy(0.66f, 0.0f);
 					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);

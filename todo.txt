@@ -51,5 +51,3 @@ introduce enemies earlier. they are the most fun part of the game
 better player sprite
 
 immune to enemies when going through portal
-
-mention that we can attack with left clikc/f/k
