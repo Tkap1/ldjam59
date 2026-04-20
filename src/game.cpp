@@ -1638,10 +1638,10 @@ func void render(float interp_dt, float delta)
 
 		do_basic_options(&container, button_size);
 
-		{
-			s_len_str text = format_text("Lights: %s", game->disable_lights ? "Off" : "On");
-			do_bool_button_ex(text, container_get_pos_and_advance(&container), button_size, false, &game->disable_lights);
-		}
+		// {
+		// 	s_len_str text = format_text("Lights: %s", game->disable_lights ? "Off" : "On");
+		// 	do_bool_button_ex(text, container_get_pos_and_advance(&container), button_size, false, &game->disable_lights);
+		// }
 
 		b8 escape = is_key_pressed(SDLK_ESCAPE, true);
 		if(do_button(S("Back"), wxy(0.87f, 0.92f), true) == e_button_result_left_click || escape) {
