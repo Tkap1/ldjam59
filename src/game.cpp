@@ -1412,12 +1412,13 @@ func void render(float interp_dt, float delta)
 			}
 
 
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw signal start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			if(!do_menu_background) {
 				if(!will_win_soon() && soft_data->draw_signal) {
-					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(1, 5), make_rrr(1.0f), 0);
+					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(1, 7), make_rrr(1.0f), 0);
 				}
 				else {
-					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(2, 5), make_rrr(1.0f), 0);
+					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(0, 7), make_rrr(1.0f), 0);
 				}
 				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
 				data.fbo = game->game_fbo;
@@ -1426,6 +1427,7 @@ func void render(float interp_dt, float delta)
 				data.depth_mode = e_depth_mode_no_read_yes_write;
 				render_flush(data, true, 0);
 			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw signal end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			{
 				float transition_time = get_transition_percent(game->render_time, hard_data->map_win_transition);
