@@ -790,7 +790,8 @@ func void update()
 					temp_pos.x += 0.5f;
 					temp_pos.z += 0.5f;
 					s_v2i tile = tile_index_from_3d(temp_pos);
-					if(get_wall_at_tile(tile)) {
+					s_entity* wall = get_wall_at_tile(tile);
+					if(wall && !wall->is_fence) {
 						entity->pos.all[axis_i] = before;
 					}
 				}
@@ -1330,12 +1331,18 @@ func void render(float interp_dt, float delta)
 							animation_time[i] += delta * 10;
 							s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
 
-							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, 0);
-
-							{
+							b8 on_cooldown = check_action_maybe(soft_update_time, entity.last_teleport_timestamp, c_teleport_cooldown);
+							float white = 1.0f;
+							if(on_cooldown) {
+								white = 0.5f;
+							}
+							else {
 								s_entity emitter = make_teleporter_particles(pos);
 								add_emitter(emitter);
 							}
+
+							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(white), 0, zero, 0);
+
 						}
 						invalid_default_xcase;
 					}
