@@ -46,11 +46,10 @@ map 10: teleport
 
 tutorial
 	mention that killing an enemy gives you +2 free actions
-make new leaderboard
 shadows?
 JUICE
-
 save config
+menu background
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk
