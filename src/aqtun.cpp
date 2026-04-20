@@ -81,7 +81,7 @@ func s_tile_visual get_tile_index(s_map* map, int x, int y)
 	for(int i = 0; i < 4; i += 1) {
 		if(do_arr[i]) {
 			s_v2i index = offset_arr[i];
-			check_arr[i] = map->active[index.y][index.x] && map->entity_arr[index.y][index.x].type == e_entity_wall && !map->entity_arr[index.y][index.x].sub_type == 1;
+			check_arr[i] = map->active[index.y][index.x] && map->entity_arr[index.y][index.x].type == e_entity_wall && map->entity_arr[index.y][index.x].sub_type != 1;
 		}
 	}
 
