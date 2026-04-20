@@ -1314,7 +1314,15 @@ func void render(float interp_dt, float delta)
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw player end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 				for(int y = 0; y < c_map_height; y += 1) {
+					b8 anything_active = false;
 					for(int x = 0; x < c_map_width + 1; x += 1) {
+
+						if(x < c_map_width) {
+							if(game->map.active[y][x]) {
+								anything_active = true;
+							}
+						}
+
 						constexpr e_mesh mesh_arr[] = {
 							e_mesh_aqtun_empty,
 							e_mesh_aqtun_corner,
@@ -1339,6 +1347,9 @@ func void render(float interp_dt, float delta)
 							model = m4_multiply(model, m4_scale(size));
 							draw_mesh(mesh_id, model, make_rrr(1), e_shader_mesh, 0);
 						}
+					}
+					if(!anything_active) {
+						break;
 					}
 				}
 
