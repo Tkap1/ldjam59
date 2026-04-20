@@ -908,7 +908,7 @@ func void render(float interp_dt, float delta)
 			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 		}
 
-		// draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_rrr(1), true, &game->font, zero, 0);
+		draw_game_title();
 		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
 
 		if(c_on_web) {
@@ -944,7 +944,7 @@ func void render(float interp_dt, float delta)
 			add_state_transition(&game->state0, e_game_state0_options, game->render_time, c_transition_time);
 		}
 
-		// draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_rrr(1), true, &game->font, zero, 0);
+		draw_game_title();
 		draw_text(S("www.twitch.tv/Tkap1"), wxy(0.5f, 0.3f), 32, make_rrr(0.6f), true, &game->font, zero, 0);
 
 		{
@@ -2663,4 +2663,9 @@ func s_entity make_sword_particles(s_v3 pos)
 	emitter.emitter_a = a;
 	emitter.emitter_b = b;
 	return emitter;
+}
+
+func void draw_game_title()
+{
+	draw_text(c_game_name, wxy(0.5f, 0.2f), 128, make_rrr(1), true, &game->font, zero, 0);
 }
