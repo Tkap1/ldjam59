@@ -593,7 +593,7 @@ func void update()
 					wanted_to_perform_action = true;
 					if(can_act) {
 						soft_data->want_to_move_forward_timestamp = zero;
-						move_forward(player, false);
+						move_forward(player, true);
 						advance_next_action_time = true;
 					}
 				}
