@@ -45,9 +45,12 @@ back face culling for meshes
 volume sliders?
 maybe make the camera look higher
 
+add a lil randomness so that speedrunning is not just about remembering a key sequence
+
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk
 introduce enemies earlier. they are the most fun part of the game
 
-while having > 0 free actions, maybe we shouldn't do "afk turns"
 maybe consuming a free action doesn't move spikes?
+
+maybe move back on input fail?

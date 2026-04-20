@@ -695,6 +695,10 @@ func void update()
 					soft_data->num_free_actions -= 1;
 				}
 
+				if(!wanted_to_perform_action && soft_data->num_free_actions > 0) {
+					soft_data->next_action_time = soft_update_time - (float)c_update_delay;
+				}
+
 				player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
 
 				if(check_for_win(player->target_pos) && !will_win_soon()) {
