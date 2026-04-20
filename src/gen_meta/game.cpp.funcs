@@ -62,7 +62,7 @@ func s_entity make_end_particles(s_v3 pos);
 func s_entity make_plus_2_action_particles(s_v3 pos);
 func s_entity make_enemy_death_particles(s_v3 pos);
 func s_entity make_player_death_particles(s_v3 pos);
-func s_v2i get_enemy_animation_frame(float time);
+func s_v2i get_enemy_animation_frame(float time, int enemy_type);
 func s_entity make_sword_particles(s_v3 pos);
 func void draw_game_title();
 func void maybe_set_free_actions_to(int wanted);

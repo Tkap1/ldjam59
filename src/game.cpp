@@ -1362,7 +1362,7 @@ func void render(float interp_dt, float delta)
 						color = make_rrr(1.5f);
 					}
 
-					s_v2i frame = get_enemy_animation_frame(entity->animation_time);
+					s_v2i frame = get_enemy_animation_frame(entity->animation_time, entity->enemy_type);
 					entity->animation_time += delta * 10;
 					draw_billboard_ex(game->atlas2, pos, c_enemy_size, frame, color, c_pi, zero, 0);
 				}
@@ -2379,6 +2379,7 @@ func void load_map(int index)
 					pos.x += randf32_11(&game->soft_data.rng) * 0.1f;
 					pos.z += randf32_11(&game->soft_data.rng) * 0.1f;
 					entity.speed = randf_range(&game->soft_data.rng, 0.9f, 1.1f);
+					entity.enemy_type = rand_range_ii(&game->soft_data.rng, 0, 1);
 				}
 				entity.target_pos = pos;
 				teleport_entity(&entity, pos);
@@ -2691,6 +2692,7 @@ func void kill_enemy(int index)
 	float cut_y = randf_range(&game->rng, 0.3f, 0.7f);
 	for(int i = 0; i < 2; i += 1) {
 		s_entity entity = zero;
+		entity.enemy_type = enemy.enemy_type;
 		s_v3 pos = enemy.pos;
 		if(i == 0) {
 			float top_of_enemy = pos.y + c_enemy_size.y * 0.5f;
@@ -2718,7 +2720,7 @@ func void kill_enemy(int index)
 		entity.spawn_timestamp = game->render_time;
 		entity.seed = randu64(&game->rng);
 
-		s_v2i animation_frame = get_enemy_animation_frame(enemy.animation_time);
+		s_v2i animation_frame = get_enemy_animation_frame(enemy.animation_time, enemy.enemy_type);
 		entity.animation_frame = animation_frame;
 
 		float x = (float)(game->atlas2.sprite_size.x * animation_frame.x);
@@ -2917,12 +2919,21 @@ func s_entity make_player_death_particles(s_v3 pos)
 	return emitter;
 }
 
-func s_v2i get_enemy_animation_frame(float time)
+func s_v2i get_enemy_animation_frame(float time, int enemy_type)
 {
-	s_v2i c_frame_arr[] = {
-		v2i(0, 1), v2i(1, 1), v2i(2, 1),
-	};
-	s_v2i result = c_frame_arr[floorfi(time) % array_count(c_frame_arr)];
+	s_v2i result;
+	if(enemy_type == 0) {
+		s_v2i c_frame_arr[] = {
+			v2i(0, 1), v2i(1, 1), v2i(2, 1)
+		};
+		result = c_frame_arr[floorfi(time) % array_count(c_frame_arr)];
+	}
+	else {
+		s_v2i c_frame_arr[] = {
+			v2i(0, 8), v2i(1, 8), v2i(2, 8), v2i(3, 8)
+		};
+		result = c_frame_arr[floorfi(time) % array_count(c_frame_arr)];
+	}
 	return result;
 }
 

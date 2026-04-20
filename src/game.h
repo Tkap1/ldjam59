@@ -193,6 +193,7 @@ struct s_entity
 	float duration;
 	s_v3 target_pos;
 	s_v3 dir;
+	int enemy_type;
 	union {
 
 		// @Note(tkap, 04/10/2025): Player
