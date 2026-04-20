@@ -309,7 +309,7 @@ func void input()
 						}
 					}
 
-					if(key == SDLK_r && !is_repeat) {
+					if(scancode == SDL_SCANCODE_R && !is_repeat) {
 						if(event.key.keysym.mod & KMOD_LCTRL) {
 							game->do_hard_reset = true;
 						}
@@ -1411,7 +1411,6 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true, 0);
 			}
 
-
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw signal start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			if(!do_menu_background) {
 				if(!will_win_soon() && soft_data->draw_signal) {
@@ -1428,6 +1427,92 @@ func void render(float interp_dt, float delta)
 				render_flush(data, true, 0);
 			}
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw signal end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tutorial start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			if(!do_menu_background) {
+				// @Hack(tkap, 20/04/2026): Because draw order
+				draw_rect_topleft(v2(-1000, -1000), v2(1), make_rrr(1), 0);
+
+				constexpr float c_font_size = 32;
+				float white = sin_range(0.75f, 1.0f, game->render_time * 16);
+				if(hard_data->current_map == 0) {
+					char c = scancode_to_char(SDL_SCANCODE_W);
+					s_len_str str = format_text(
+						"On the green signal,\n"
+						"press {%i} to move\n"
+						"forward\n\n"
+						"Not taking an action on\ntime will also move you\n"
+						"forward",
+						c
+					);
+					s_v2 pos = wxy(0.74f, 0.0f);
+					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
+				}
+				else if(hard_data->current_map == 1) {
+					char c0 = scancode_to_char(SDL_SCANCODE_A);
+					char c1 = scancode_to_char(SDL_SCANCODE_D);
+					s_len_str str = format_text(
+						"Press {%i} to move left\n"
+						"Press {%i} to move right\n",
+						c0, c1
+					);
+					s_v2 pos = wxy(0.745f, 0.0f);
+					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
+				}
+
+				else if(hard_data->current_map == 2) {
+					char c = scancode_to_char(SDL_SCANCODE_R);
+					s_len_str str = format_text(
+						"Press {%i} to restart the level\n"
+						"Press Ctrl+{%i} to restart the game\n",
+						c, c
+					);
+					s_v2 pos = wxy(0.622f, 0.0f);
+					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
+				}
+
+				else if(hard_data->current_map == 3) {
+					char c = scancode_to_char(SDL_SCANCODE_F);
+					s_len_str str = format_text(
+						"Press {%i} to attack\n\n"
+						"Killing an enemy allows you to\n"
+						"perform 2 extra actions\n"
+						"without waiting for\n"
+						"the signal",
+						c
+					);
+					s_v2 pos = wxy(0.66f, 0.0f);
+					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
+				}
+
+				else if(hard_data->current_map == 4) {
+					s_len_str str = format_text("Press space to jump");
+					s_v2 pos = wxy(0.782f, 0.0f);
+					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
+				}
+
+				else if(hard_data->current_map == 7) {
+					char c = scancode_to_char(SDL_SCANCODE_F);
+					s_len_str str = format_text(
+						"Powerups allow you to\n"
+						"perform 2 extra actions\n"
+						"without waiting for\n"
+						"the signal"
+					);
+					s_v2 pos = wxy(0.738f, 0.0f);
+					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
+				}
+
+				for(int i = 0; i < 2; i += 1) {
+					s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+					data.fbo = game->game_fbo;
+					data.projection = ortho;
+					data.blend_mode = e_blend_mode_normal;
+					data.depth_mode = e_depth_mode_no_read_yes_write;
+					render_flush(data, true, i);
+				}
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		tutorial end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			{
 				float transition_time = get_transition_percent(game->render_time, hard_data->map_win_transition);
@@ -2052,7 +2137,7 @@ func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha, int render_pass_
 {
 	pos += size * 0.5f;
 	s_v2 keycap_size = size * 1.1f;
-	draw_atlas_ex(game->atlas, pos, keycap_size, v2i(2, 0), make_ra(1, alpha), 0, zero, render_pass_index);
+	draw_atlas_ex(game->atlas, pos, keycap_size, v2i(1, 0), make_ra(1, alpha), 0, zero, render_pass_index);
 	s_len_str str = format_text("%c", to_upper_case(c));
 	pos.x -= keycap_size.x * 0.025f;
 	pos.y -= keycap_size.x * 0.05f;

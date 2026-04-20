@@ -31,12 +31,7 @@ Sounds: Tkap & opengameart
 Music: TeknoAXE
 ----------------------------------------------------------------------------------------------------------------------------------
 
-map 1: teach that we can press forward to not have to wait for the timer
-map 2: teach how to switch lane
-map 4: teach jump
-map 6: spikes
-map 8: enemy
-map 10: teleport
+map8 pickup
 
 // TOP PRIORITY
 LEVELS
@@ -48,7 +43,11 @@ JUICE
 save config
 back face culling for meshes
 volume sliders?
+maybe make the camera look higher
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk
 introduce enemies earlier. they are the most fun part of the game
+
+while having > 0 free actions, maybe we shouldn't do "afk turns"
+maybe consuming a free action doesn't move spikes?

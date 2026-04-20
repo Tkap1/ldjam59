@@ -407,6 +407,9 @@ func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8
 	s_v2 pos = in_pos;
 	pos.y += font->ascent * scale;
 
+	s_v2 min_v = in_pos;
+	s_v2 max_v = in_pos;
+
 	s_text_iterator it = {};
 	while(iterate_text(&it, text, color)) {
 		for(int char_i = 0; char_i < it.text.count; char_i++) {
@@ -418,39 +421,66 @@ func s_v2 draw_text(s_len_str text, s_v2 in_pos, float font_size, s_v4 color, b8
 				pos.y += font_size;
 				continue;
 			}
+			int next_c = char_i < it.text.count - 1 ? it.text[char_i + 1] : 0;
+			if(c == '{' && is_number((char)next_c)) {
+				char* s = it.text.str + char_i + 1;
+				char* end = s;
+				int value = strtol(s, &end, 10);
+				assert(end > s);
 
-			s_glyph glyph = font->glyph_arr[c];
-			s_v2 draw_size = v2((glyph.x1 - glyph.x0) * scale, (glyph.y1 - glyph.y0) * scale);
+				draw_keycap((char)value, pos - v2(0, font_size * 0.7f), v2(font_size), color.a, render_pass_index);
 
-			s_v2 glyph_pos = pos;
-			glyph_pos.x += glyph.x0 * scale;
-			glyph_pos.y += -glyph.y0 * scale;
+				pos.x += font_size * 1.1f;
 
-			// t.flags |= e_render_flag_use_texture | e_render_flag_text;
-			s_v3 tpos = v3(glyph_pos, 0.0f);
+				max_v.x = max(max_v.x, pos.x);
+				max_v.y = max(max_v.y, pos.y + font_size * 0.2f);
 
-			s_v2 center = tpos.xy + draw_size / 2 * v2(1, -1);
-			s_v2 bottomleft = tpos.xy;
+				int len = (int)(end - s);
+				char_i += (len + 2) - 1;
+			}
+			else {
+				s_glyph glyph = font->glyph_arr[c];
+				s_v2 draw_size = v2((glyph.x1 - glyph.x0) * scale, (glyph.y1 - glyph.y0) * scale);
+
+				s_v2 glyph_pos = pos;
+				glyph_pos.x += glyph.x0 * scale;
+				glyph_pos.y += -glyph.y0 * scale;
+
+				// t.flags |= e_render_flag_use_texture | e_render_flag_text;
+				s_v3 tpos = v3(glyph_pos, 0.0f);
+
+				s_v2 center = tpos.xy + draw_size / 2 * v2(1, -1);
+				s_v2 bottomleft = tpos.xy;
 
 
-			// s_m4 model = m4_translate(v3(tpos.xy, draw_data.z));
-			// model = m4_multiply(model, m4_scale(v3(draw_size, 1)));
+				// s_m4 model = m4_translate(v3(tpos.xy, draw_data.z));
+				// model = m4_multiply(model, m4_scale(v3(draw_size, 1)));
 
-			// t.color = it.color;
-			s_v2 uv_min = glyph.uv_min;
-			s_v2 uv_max = glyph.uv_max;
-			// swap(&uv_min.y, &uv_max.y);
-			// t.origin_offset = c_origin_bottomleft;
+				// t.color = it.color;
+				s_v2 uv_min = glyph.uv_min;
+				s_v2 uv_max = glyph.uv_max;
+				// swap(&uv_min.y, &uv_max.y);
+				// t.origin_offset = c_origin_bottomleft;
 
-			s_v4 temp_color = it.color;
-			temp_color.a = color.a;
-			draw_texture_screen(tpos.xy, draw_size, temp_color, e_texture_font, e_shader_text, uv_min, uv_max, draw_data, render_pass_index);
+				s_v4 temp_color = it.color;
+				temp_color.a = color.a;
+				draw_texture_screen(tpos.xy, draw_size, temp_color, e_texture_font, e_shader_text, uv_min, uv_max, draw_data, render_pass_index);
 
-			// draw_generic(game_renderer, &t, render_pass, render_data.shader, font->texture.game_id, e_mesh_rect);
+				// draw_generic(game_renderer, &t, render_pass, render_data.shader, font->texture.game_id, e_mesh_rect);
 
-			pos.x += glyph.advance_width * scale;
+				pos.x += glyph.advance_width * scale;
 
+				max_v.x = max(max_v.x, pos.x);
+				max_v.y = max(max_v.y, pos.y);
+			}
 		}
+	}
+
+	if(draw_data.do_panel_around_text) {
+		s_v2 size = max_v - min_v;
+		size.x += 8;
+		size.y += 8;
+		draw_rect_topleft(in_pos, size, make_ra(0.0f, 0.5f), render_pass_index);
 	}
 
 	return v2(pos.x, in_pos.y);

@@ -119,6 +119,7 @@ struct s_plane_instance
 
 struct s_draw_data
 {
+	b8 do_panel_around_text;
 	b8 flip_x;
 	float z;
 	float mix_weight;
