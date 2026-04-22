@@ -1,35 +1,3 @@
-stream:
-	reenable song requeest
-	reenable viewer rewards
-	get rid of streamlabs donation thing
-----------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Credits
-Graphics: Tkap & Aqtun & Superku
-Sounds: Tkap & opengameart
-Music: TeknoAXE
-----------------------------------------------------------------------------------------------------------------------------------
 
 // TOP PRIORITY
 
@@ -50,13 +18,21 @@ Wait for the green signal, then perform an action.
 Jump over spikes, kill enemies, win.
 
 
+
 -Dev-
+
 Made in C++ without an engine, in about 30 hours
+
+Made live at www.twitch.tv/tkap1
+
 
 
 -Credits-
-Programming: Tkap
-Graphics: Tkap & Aqtun & Superku
-Sounds: Tkap & opengameart
-Music: TeknoAXE
 
+Programming: Tkap
+
+Graphics: Tkap & Aqtun & Superku
+
+Sounds: Tkap & opengameart
+
+Music: TeknoAXE
