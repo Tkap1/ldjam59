@@ -30,7 +30,7 @@ global constexpr int c_left_ctrl = c_max_keys - 4;
 
 global constexpr int c_max_leaderboard_entries = 2000;
 global constexpr int c_leaderboard_visible_entries_per_page = 10;
-global constexpr int c_leaderboard_id = 34127;
+global constexpr int c_leaderboard_id = 34186;
 
 global constexpr s_len_str c_game_name = S("Signal Slasher");
 

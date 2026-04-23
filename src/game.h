@@ -2,8 +2,7 @@
 #include "gen_meta/game.h.enums"
 
 global constexpr s_v2 c_player_size = {0.2f, 0.5f};
-global constexpr float c_action_interval = 0.25f;
-global constexpr float c_action_grace_period = 0.5f;
+global constexpr float c_action_cooldown = 0.25f;
 global constexpr int c_map_width = 5;
 global constexpr int c_map_height = 128;
 global constexpr int c_map_version = 1;
@@ -11,7 +10,7 @@ global constexpr int c_map_count = 20;
 global constexpr float c_player_range = 1.5f;
 global constexpr float c_enemy_range = 0.2f;
 global constexpr float c_teleport_cooldown = 99999;
-global constexpr float c_win_transition_duration = c_action_interval * 2;
+global constexpr float c_win_transition_duration = c_action_cooldown * 2;
 global constexpr s_v2 c_enemy_size = {0.5f, 0.5f};
 
 #if defined(__EMSCRIPTEN__)
@@ -298,10 +297,8 @@ struct s_soft_game_data
 	s_maybe<float> want_to_jump_timestamp;
 	s_maybe<float> want_to_attack_timestamp;
 	s_maybe<float> last_action_success_timestamp;
-	s_maybe<float> last_action_timestamp;
+	float last_action_timestamp;
 	s_maybe<float> last_attack_timestamp;
-	b8 draw_signal;
-	float next_action_time;
 	s_maybe<float> win_timestamp;
 	s_maybe<float> lose_timestamp;
 	s_maybe<float> teleport_timestamp;

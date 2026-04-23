@@ -593,8 +593,11 @@ func void update()
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		update player start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			{
 				b8 can_act = false;
-				if(soft_update_time >= soft_data->next_action_time && soft_update_time <= soft_data->next_action_time + c_action_grace_period){
-					can_act = true;
+				{
+					s_time_data data = get_time_data(soft_update_time, soft_data->last_action_timestamp, c_action_cooldown);
+					if(data.percent >= 1) {
+						can_act = true;
+					}
 				}
 				if(soft_data->num_free_actions > 0) {
 					can_act = true;
@@ -602,20 +605,13 @@ func void update()
 
 				b8 wanted_to_perform_action = false;
 
-				if(can_act) {
-					soft_data->draw_signal = true;
-				}
-				else {
-					soft_data->draw_signal = false;
-				}
-
 				b8 advance_next_action_time = false;
 
 				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_forward_timestamp, 0.0f)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
 						soft_data->want_to_move_forward_timestamp = zero;
-						move_forward(player, true);
+						move_forward(player, false);
 						advance_next_action_time = true;
 						play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 					}
@@ -685,38 +681,12 @@ func void update()
 				}
 
 				if(advance_next_action_time) {
-					float diff = soft_update_time - soft_data->next_action_time;
-					soft_data->next_action_time += c_action_interval + diff;
 					do_a_turn = true;
-				}
-
-				if(wanted_to_perform_action && !can_act) {
-					play_sound_at_speed(e_sound_fail_action, get_rand_sound_speed(1.1f, &game->rng));
-					{
-						s_transition t = zero;
-						t.active = true;
-						t.timestamp = game->render_time;
-						t.duration = 0.5f;
-						soft_data->fail_action_effect = t;
-					}
-					soft_data->next_action_time = at_most(soft_update_time + 1.5f, soft_data->next_action_time + (float)c_update_delay * 10);
-					// move_backwards(player);
-				}
-
-				if(soft_update_time > soft_data->next_action_time + c_action_grace_period) {
-					soft_data->next_action_time += c_action_interval + c_action_grace_period;
-					do_a_turn = true;
-					move_forward(player, true);
-					play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
+					soft_data->last_action_timestamp = soft_update_time;
 				}
 
 				if(wanted_to_perform_action && soft_data->num_free_actions > 0) {
-					soft_data->next_action_time = soft_update_time - (float)c_update_delay;
 					soft_data->num_free_actions -= 1;
-				}
-
-				if(!wanted_to_perform_action && soft_data->num_free_actions > 0) {
-					soft_data->next_action_time = soft_update_time - (float)c_update_delay;
 				}
 
 				player->pos = lerp_v3(player->pos, player->target_pos, delta * 10);
@@ -728,7 +698,7 @@ func void update()
 						s_transition t = zero;
 						t.active = true;
 						t.timestamp = game->render_time;
-						t.duration = c_win_transition_duration * 2;
+						t.duration = c_win_transition_duration * 2.0f;
 						hard_data->map_win_transition = t;
 					}
 				}
@@ -1155,8 +1125,8 @@ func void render(float interp_dt, float delta)
 					s_v3 pos = player_pos;
 					if(player.is_jumping.valid) {
 						float passed = update_time_to_render_time(soft_update_time, interp_dt) - player.is_jumping.value;
-						pos.y += sinf(passed / c_action_interval * c_pi);
-						if(passed >= c_action_interval) {
+						pos.y += sinf(passed / c_action_cooldown * c_pi);
+						if(passed >= c_action_cooldown) {
 							get_player()->is_jumping = zero;
 							play_sound_at_speed(e_sound_landing, get_rand_sound_speed(1.1f, &game->rng));
 						}
@@ -1492,23 +1462,6 @@ func void render(float interp_dt, float delta)
 				data.depth_mode = e_depth_mode_read_no_write;
 				render_flush(data, true, 0);
 			}
-
-			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw signal start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-			if(!do_menu_background) {
-				if(!will_win_soon() && soft_data->draw_signal) {
-					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(1, 7), make_rrr(1.0f), 0);
-				}
-				else {
-					draw_atlas(game->atlas2, wxy(0.5f, 0.6f), v2(96), v2i(0, 7), make_rrr(1.0f), 0);
-				}
-				s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
-				data.fbo = game->game_fbo;
-				data.projection = ortho;
-				data.blend_mode = e_blend_mode_normal;
-				data.depth_mode = e_depth_mode_no_read_yes_write;
-				render_flush(data, true, 0);
-			}
-			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw signal end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		tutorial start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			if(!do_menu_background) {
@@ -2580,7 +2533,7 @@ func void move_forward(s_entity* player, b8 does_walking_into_wall_kill_you)
 	}
 
 	if((does_walking_into_wall_kill_you || is_fence) && wall) {
-		start_losing(c_action_interval * 1.1f);
+		start_losing(c_action_cooldown * 1.1f);
 	}
 }
 
@@ -2606,7 +2559,7 @@ func void move_backwards(s_entity* player)
 	}
 
 	if(is_fence) {
-		start_losing(c_action_interval * 1.1f);
+		start_losing(c_action_cooldown * 1.1f);
 	}
 }
 
@@ -2635,7 +2588,7 @@ func void jump_forward(s_entity* player)
 			player->target_pos = target_pos;
 		}
 		else {
-			start_losing(c_action_interval * 1.1f);
+			start_losing(c_action_cooldown * 1.1f);
 			break;
 		}
 	}
