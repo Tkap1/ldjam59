@@ -3,7 +3,7 @@
 [X] dont draw the signal thing
 [X] actions have cooldown unless you have free action
 [X] input queue
-[] fix cringe levels
+[X] fix cringe levels
 [] fix tutorial text
 [] darken player if can't act?
 [] free action indicator?
