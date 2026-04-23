@@ -4,11 +4,12 @@
 [X] actions have cooldown unless you have free action
 [X] input queue
 [X] fix cringe levels
-[] fix tutorial text
+[X] fix tutorial text
 [] darken player if can't act?
 [] free action indicator?
 [] shadows?
 [] slider tech?
+[] display current level?
 
 // TOP PRIORITY
 

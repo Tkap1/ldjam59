@@ -1492,14 +1492,9 @@ func void render(float interp_dt, float delta)
 				if(hard_data->current_map == 0) {
 					char c = scancode_to_char(SDL_SCANCODE_W);
 					s_len_str str = format_text(
-						"On the green signal,\n"
-						"press {%i} to move\n"
-						"forward\n\n"
-						"Not taking an action on\ntime will also move you\n"
-						"forward",
-						c
+						"Press {%i} to move forward", c
 					);
-					s_v2 pos = wxy(0.74f, 0.0f);
+					s_v2 pos = wxy(0.725f, 0.0f);
 					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
 				}
 				else if(hard_data->current_map == 1) {
@@ -1534,7 +1529,7 @@ func void render(float interp_dt, float delta)
 						"Killing an enemy allows you to\n"
 						"perform 3 extra actions\n"
 						"without waiting for\n"
-						"the signal",
+						"the cooldown",
 						c0, c1
 					);
 					s_v2 pos = wxy(0.66f, 0.0f);
@@ -1552,7 +1547,7 @@ func void render(float interp_dt, float delta)
 						"Powerups allow you to\n"
 						"perform 2 extra actions\n"
 						"without waiting for\n"
-						"the signal"
+						"the cooldown"
 					);
 					s_v2 pos = wxy(0.738f, 0.0f);
 					draw_text(str, pos, c_font_size, make_rrr(white), false, &game->font, {.do_panel_around_text = true}, 0);
