@@ -2,7 +2,7 @@
 [X] remove auto move forward
 [X] dont draw the signal thing
 [X] actions have cooldown unless you have free action
-[] input queue
+[X] input queue
 [] fix cringe levels
 [] fix tutorial text
 [] darken player if can't act?

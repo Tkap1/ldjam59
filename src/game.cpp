@@ -325,17 +325,17 @@ func void input()
 						#endif
 					}
 					else if(scancode == SDL_SCANCODE_K && !is_repeat) {
-						soft_data->want_to_attack_timestamp = maybe(soft_update_time);
+						soft_data->want_to_act_arr[e_action_attack] = maybe(soft_update_time);
 					}
 					else if(scancode == SDL_SCANCODE_SPACE && !is_repeat) {
-						soft_data->want_to_jump_timestamp = maybe(soft_update_time);
+						soft_data->want_to_act_arr[e_action_jump] = maybe(soft_update_time);
 					}
 					else if(scancode == SDL_SCANCODE_W) {
 						if(game->in_editor) {
 							game->editor.cam_pos.y -= 20;
 						}
 						else if(!is_repeat) {
-							soft_data->want_to_move_forward_timestamp = maybe(soft_update_time);
+							soft_data->want_to_act_arr[e_action_move_forward] = maybe(soft_update_time);
 						}
 					}
 					else if(scancode == SDL_SCANCODE_S) {
@@ -353,7 +353,7 @@ func void input()
 							game->editor.cam_pos.x -= 20;
 						}
 						else if(!is_repeat) {
-							soft_data->want_to_move_left_timestamp = maybe(soft_update_time);
+							soft_data->want_to_act_arr[e_action_move_left] = maybe(soft_update_time);
 						}
 					}
 					else if(scancode == SDL_SCANCODE_D) {
@@ -361,12 +361,12 @@ func void input()
 							game->editor.cam_pos.x += 20;
 						}
 						else if(!is_repeat) {
-							soft_data->want_to_move_right_timestamp = maybe(soft_update_time);
+							soft_data->want_to_act_arr[e_action_move_right] = maybe(soft_update_time);
 						}
 					}
 					else if(scancode == SDL_SCANCODE_F) {
 						if(!is_repeat) {
-							soft_data->want_to_attack_timestamp = maybe(soft_update_time);
+							soft_data->want_to_act_arr[e_action_attack] = maybe(soft_update_time);
 						}
 					}
 					else if(scancode == SDL_SCANCODE_LEFT && !is_repeat) {
@@ -480,7 +480,7 @@ func void input()
 					game->input_arr[key].half_transition_count += 1;
 
 					if(event.type == SDL_MOUSEBUTTONDOWN) {
-						soft_data->want_to_attack_timestamp = maybe(soft_update_time);
+						soft_data->want_to_act_arr[e_action_attack] = maybe(soft_update_time);
 					}
 				}
 
@@ -607,23 +607,36 @@ func void update()
 
 				b8 advance_next_action_time = false;
 
-				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_forward_timestamp, 0.0f)) {
+				s_maybe<e_action> to_perform = zero;
+				{
+					float highest_time = 0;
+					for_enum(action_i, e_action) {
+						if(soft_data->want_to_act_arr[action_i].valid) {
+							if(soft_data->want_to_act_arr[action_i].value > highest_time) {
+								highest_time = soft_data->want_to_act_arr[action_i].value;
+								to_perform = maybe(action_i);
+							}
+						}
+					}
+				}
+
+				if(!advance_next_action_time && maybe_equals(to_perform, e_action_move_forward)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
-						soft_data->want_to_move_forward_timestamp = zero;
+						soft_data->want_to_act_arr[e_action_move_forward] = zero;
 						move_forward(player, false);
 						advance_next_action_time = true;
 						play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 					}
 				}
 
-				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_left_timestamp, 0.0f)) {
+				if(!advance_next_action_time && maybe_equals(to_perform, e_action_move_left)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
 						play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 						s_v2i player_tile = tile_index_from_3d(player->target_pos - v3(1, 0, 0));
 						s_entity* wall = get_wall_at_tile(player_tile);
-						soft_data->want_to_move_left_timestamp = zero;
+						soft_data->want_to_act_arr[e_action_move_left] = zero;
 						advance_next_action_time = true;
 						if(!wall) {
 							s_v3 target_pos = player->target_pos;
@@ -633,13 +646,13 @@ func void update()
 					}
 				}
 
-				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_move_right_timestamp, 0.0f)) {
+				if(!advance_next_action_time && maybe_equals(to_perform, e_action_move_right)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
 						play_sound_at_speed(e_sound_walk, get_rand_sound_speed(1.1f, &game->rng));
 						s_v2i player_tile = tile_index_from_3d(player->target_pos + v3(1, 0, 0));
 						s_entity* wall = get_wall_at_tile(player_tile);
-						soft_data->want_to_move_right_timestamp = zero;
+						soft_data->want_to_act_arr[e_action_move_right] = zero;
 						advance_next_action_time = true;
 						if(!wall) {
 							s_v3 target_pos = player->target_pos;
@@ -649,10 +662,10 @@ func void update()
 					}
 				}
 
-				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_jump_timestamp, 0.0f)) {
+				if(!advance_next_action_time && maybe_equals(to_perform, e_action_jump)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
-						soft_data->want_to_jump_timestamp = zero;
+						soft_data->want_to_act_arr[e_action_jump] = zero;
 						play_sound_at_speed(e_sound_jump, get_rand_sound_speed(1.1f, &game->rng));
 						advance_next_action_time = true;
 						jump_forward(player);
@@ -660,10 +673,10 @@ func void update()
 					}
 				}
 
-				if(!advance_next_action_time && check_action_maybe(soft_update_time, soft_data->want_to_attack_timestamp, 0.0f)) {
+				if(!advance_next_action_time && maybe_equals(to_perform, e_action_attack)) {
 					wanted_to_perform_action = true;
 					if(can_act) {
-						soft_data->want_to_attack_timestamp = zero;
+						soft_data->want_to_act_arr[e_action_attack] = zero;
 						advance_next_action_time = true;
 						s_maybe<int> enemy = get_closest_enemy_in_attack_range(player->pos);
 						soft_data->last_attack_timestamp = maybe(game->render_time);
@@ -683,6 +696,12 @@ func void update()
 				if(advance_next_action_time) {
 					do_a_turn = true;
 					soft_data->last_action_timestamp = soft_update_time;
+				}
+
+				if(advance_next_action_time) {
+					for_enum(action_i, e_action) {
+						soft_data->want_to_act_arr[action_i] = zero;
+					}
 				}
 
 				if(wanted_to_perform_action && soft_data->num_free_actions > 0) {

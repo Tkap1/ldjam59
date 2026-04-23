@@ -276,6 +276,16 @@ struct s_transition
 };
 
 
+enum e_action
+{
+	e_action_move_forward,
+	e_action_move_left,
+	e_action_move_right,
+	e_action_jump,
+	e_action_attack,
+	e_action_count,
+};
+
 struct s_soft_game_data
 {
 	float last_non_spammy_timestamp;
@@ -291,12 +301,8 @@ struct s_soft_game_data
 
 	s_entity_manager<s_entity, c_max_entities> entity_arr;
 
-	s_maybe<float> want_to_move_forward_timestamp;
-	s_maybe<float> want_to_move_left_timestamp;
-	s_maybe<float> want_to_move_right_timestamp;
-	s_maybe<float> want_to_jump_timestamp;
-	s_maybe<float> want_to_attack_timestamp;
-	s_maybe<float> last_action_success_timestamp;
+	s_array<s_maybe<float>, e_action_count> want_to_act_arr;
+
 	float last_action_timestamp;
 	s_maybe<float> last_attack_timestamp;
 	s_maybe<float> win_timestamp;
