@@ -1962,10 +1962,10 @@ func s_v2 get_rect_normal_of_closest_edge(s_v2 p, s_v2 center, s_v2 size)
 
 func void draw_atlas(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 color, int render_pass_index)
 {
-	draw_atlas_ex(atlas, pos, size, index, color, 0, zero, render_pass_index);
+	draw_atlas_ex(atlas, pos, size, index, color, 0, e_shader_flat, zero, render_pass_index);
 }
 
-func void draw_atlas_ex(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, s_draw_data draw_data, int render_pass_index)
+func void draw_atlas_ex(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 color, float rotation, e_shader shader_id, s_draw_data draw_data, int render_pass_index)
 {
 	s_instance_data data = zero;
 	data.model = m4_translate(v3(pos, draw_data.z));
@@ -1987,7 +1987,7 @@ func void draw_atlas_ex(s_atlas atlas, s_v2 pos, s_v2 size, s_v2i index, s_v4 co
 		swap(&data.uv_min.x, &data.uv_max.x);
 	}
 
-	add_to_render_group(data, e_shader_flat, atlas.texture, e_mesh_quad, render_pass_index);
+	add_to_render_group(data, shader_id, atlas.texture, e_mesh_quad, render_pass_index);
 }
 
 func void draw_atlas_model(s_atlas atlas, s_m4 model, s_v2i index, s_v4 color, s_draw_data draw_data, int render_pass_index)
@@ -2216,6 +2216,22 @@ func s_time_data get_time_data_maybe(float curr, s_maybe<float> timestamp, float
 	s_time_data result = zero;
 	if(timestamp.valid) {
 		result = get_time_data(curr, timestamp.value, duration);
+	}
+	return result;
+}
+
+func s_uv get_uv_for_atlas(s_atlas atlas, s_v2i index, b8 flip_x)
+{
+	s_uv result = zero;
+	int x = index.x * atlas.sprite_size.x + atlas.padding;
+	result.uv_min.x = x / (float)atlas.texture_size.x;
+	result.uv_max.x = result.uv_min.x + (atlas.sprite_size.x - atlas.padding) / (float)atlas.texture_size.x;
+	int y = index.y * atlas.sprite_size.y + atlas.padding;
+	result.uv_min.y = y / (float)(atlas.texture_size.y);
+	result.uv_max.y = result.uv_min.y + (atlas.sprite_size.y - atlas.padding) / (float)atlas.texture_size.y;
+
+	if(flip_x) {
+		swap(&result.uv_min.x, &result.uv_max.x);
 	}
 	return result;
 }

@@ -5,11 +5,14 @@
 [X] input queue
 [X] fix cringe levels
 [X] fix tutorial text
-[] darken player if can't act?
+[X] darken player if can't act?
 [] free action indicator?
 [] shadows?
 [] slider tech?
 [] display current level?
+
+lesson: sometimes creating some extra data to make the rendering code of something happens in update is the play
+	as opposed to trying to do the rendering effect exclusively by looking at the update data
 
 // TOP PRIORITY
 

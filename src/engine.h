@@ -38,6 +38,7 @@ enum e_shader
 	e_shader_billboard,
 	e_shader_transition,
 	e_shader_fail_action,
+	e_shader_player,
 	e_shader_count,
 };
 
@@ -56,6 +57,7 @@ global constexpr char* c_shader_path_arr[e_shader_count] = {
 	"shaders/billboard.shader",
 	"shaders/transition.shader",
 	"shaders/fail_action.shader",
+	"shaders/player.shader",
 };
 
 
@@ -130,6 +132,12 @@ struct s_container
 {
 	s_v2 curr_pos;
 	s_v2 advance;
+};
+
+struct s_uv
+{
+	s_v2 uv_min;
+	s_v2 uv_max;
 };
 
 enum e_depth_mode

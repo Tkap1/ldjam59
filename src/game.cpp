@@ -1153,16 +1153,29 @@ func void render(float interp_dt, float delta)
 					s_v2 size = c_player_size * 1.5f;
 					size.x *= 2;
 					pos.y += size.y * 0.5f;
-					// s_v2i frame_arr[] = {
-					// 	v2i(0, 0), v2i(1, 0), v2i(2, 0), v2i(1, 0), v2i(3, 0), v2i(4, 0), v2i(3, 0),
-					// };
 					s_v2i frame_arr[] = {
 						v2i(0, 9), v2i(1, 9), v2i(2, 9), v2i(3, 9),
 					};
 					static float animation_time = 0;
 					animation_time += delta * 15;
 					s_v2i frame = frame_arr[floorfi(animation_time) % array_count(frame_arr)];
-					draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), c_pi, zero, 0);
+
+					{
+						s_instance_data data = zero;
+						data.model = m4_translate(pos);
+						data.model *= m4_rotate(c_pi, c_z_axis);
+						data.model *= m4_scale(v3(size, 1));
+						data.color = make_rrr(1);
+						// float time = update_time_to_render_time(soft_update_time, interp_dt);
+						// data.mix_weight = at_most(1.0f, (time - soft_data->last_action_timestamp) / c_action_cooldown);
+						data.mix_weight = 1;
+						{
+							s_uv uv = get_uv_for_atlas(game->atlas2, frame, false);
+							data.uv_min = uv.uv_min;
+							data.uv_max = uv.uv_max;
+						}
+						add_to_render_group(data, e_shader_player, e_texture_atlas2, e_mesh_quad, 0);
+					}
 
 					{
 						s_time_data data = get_time_data_maybe(game->render_time, soft_data->last_attack_timestamp, 0.25f);
@@ -2187,7 +2200,7 @@ func void draw_keycap(char c, s_v2 pos, s_v2 size, float alpha, int render_pass_
 {
 	pos += size * 0.5f;
 	s_v2 keycap_size = size * 1.1f;
-	draw_atlas_ex(game->atlas, pos, keycap_size, v2i(1, 0), make_ra(1, alpha), 0, zero, render_pass_index);
+	draw_atlas_ex(game->atlas, pos, keycap_size, v2i(1, 0), make_ra(1, alpha), 0, e_shader_flat, zero, render_pass_index);
 	s_len_str str = format_text("%c", to_upper_case(c));
 	pos.x -= keycap_size.x * 0.025f;
 	pos.y -= keycap_size.x * 0.05f;
