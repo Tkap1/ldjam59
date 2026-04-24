@@ -1461,6 +1461,26 @@ func void render(float interp_dt, float delta)
 					render_flush(data, true, 0);
 				}
 
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw free actions start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+				if(soft_data->num_free_actions > 0) {
+					s_v2 pos = wxy(0.5f, 0.55f);
+					s_v2 size = v2(48);
+					float advance = size.x + 4;
+					pos.x -= (advance * 3) * 0.5f;
+					for(int i = 0; i < soft_data->num_free_actions; i += 1) {
+						draw_atlas_topleft(game->atlas2, pos, size, v2i(0, 6), make_rrr(1), 0);
+						pos.x += advance;
+					}
+
+					s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+					data.fbo = game->game_fbo;
+					data.projection = ortho;
+					data.blend_mode = e_blend_mode_normal;
+					data.depth_mode = e_depth_mode_no_read_no_write;
+					render_flush(data, true, 0);
+				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw free actions end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		draw fail action start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 				{
 					if(soft_data->fail_action_effect.active) {

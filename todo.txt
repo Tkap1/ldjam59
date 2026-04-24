@@ -6,7 +6,7 @@
 [X] fix cringe levels
 [X] fix tutorial text
 [X] darken player if can't act?
-[] free action indicator?
+[X] free action indicator?
 [] shadows?
 [] slider tech?
 [] display current level?
