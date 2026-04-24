@@ -969,12 +969,29 @@ func void render(float interp_dt, float delta)
 	s_m4 view_inv = m4_inverse(view_2d);
 	s_m4 view_projection = m4_multiply(ortho, view_2d);
 
+	// s_m4 shadow_view = view_3d;
+	// s_m4 shadow_ortho = make_orthographic(-10, 10, -10, 10, -10, 10);
+
+	s_m4 shadow_view;
+	s_m4 shadow_ortho;
+	{
+		s_v3 target_pos = player_pos;
+		target_pos.x = 2;
+		s_v3 light_dir = get_light_dir();
+		s_v3 light_pos = target_pos - light_dir * 15.0f;  // position behind/above the scene
+		shadow_view = look_at(light_pos, target_pos, c_y_axis);
+		shadow_ortho = make_orthographic(-10, 10, -10, 10, 0.1f, 20.0f);
+	}
+
 	s_v2 world_mouse = v2_multiply_m4(g_mouse, view_inv);
 
 	clear_framebuffer_color(0, make_rrr(0.0f));
 
 	clear_framebuffer_color(game->game_fbo.id, v4(0, 0, 0, 0));
 	clear_framebuffer_depth(game->game_fbo.id);
+
+	clear_framebuffer_color(game->shadow_fbo.id, v4(0, 0, 0, 0));
+	clear_framebuffer_depth(game->shadow_fbo.id);
 
 	b8 should_do_game = false;
 
@@ -1173,6 +1190,7 @@ func void render(float interp_dt, float delta)
 							data.uv_max = uv.uv_max;
 						}
 						add_to_render_group(data, e_shader_player, e_texture_atlas2, e_mesh_quad, 0);
+						add_to_render_group(data, e_shader_player, e_texture_atlas2, e_mesh_quad, c_shadow_render_index);
 					}
 
 					{
@@ -1249,6 +1267,7 @@ func void render(float interp_dt, float delta)
 							model = m4_multiply(model, m4_rotate(rotation, c_y_axis));
 							model = m4_multiply(model, m4_scale(size));
 							draw_mesh(mesh_id, model, make_rrr(1), e_shader_mesh, 0);
+							draw_mesh(mesh_id, model, make_rrr(1), e_shader_mesh_shadow, c_shadow_render_index);
 						}
 					}
 					if(!anything_active) {
@@ -1268,6 +1287,7 @@ func void render(float interp_dt, float delta)
 						color = make_rgb(1, 0.8f, 0.8f);
 						s_v3 pos = entity.pos;
 						draw_mesh(e_mesh_aqtun_spikes, pos, size, color, e_shader_mesh, 0);
+						draw_mesh(e_mesh_aqtun_spikes, pos, size, color, e_shader_mesh_shadow, c_shadow_render_index);
 					}
 				}
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw wall end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1307,6 +1327,7 @@ func void render(float interp_dt, float delta)
 								rotation = -game->render_time;
 							}
 							draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(5, 0), make_rrr(1), rotation * 4, zero, 0);
+							draw_billboard_ex(game->atlas, pos, v2(0.5f), v2i(5, 0), make_rrr(1), rotation * 4, zero, c_shadow_render_index);
 						}
 
 						xcase e_pickup_plus_2_actions: {
@@ -1323,6 +1344,7 @@ func void render(float interp_dt, float delta)
 							s_v2i frame = frame_arr[floorfi(animation_time[i]) % array_count(frame_arr)];
 
 							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, 0);
+							draw_billboard_ex(game->atlas2, pos, size, frame, make_rrr(1), 0, zero, c_shadow_render_index);
 
 							s_entity emitter = make_plus_2_action_particles(pos);
 							add_emitter(emitter);
@@ -1373,14 +1395,31 @@ func void render(float interp_dt, float delta)
 					s_v2i frame = get_enemy_animation_frame(entity->animation_time, entity->enemy_type);
 					entity->animation_time += delta * 10;
 					draw_billboard_ex(game->atlas2, pos, c_enemy_size, frame, color, c_pi, zero, 0);
+					draw_billboard_ex(game->atlas2, pos, c_enemy_size, frame, color, c_pi, zero, c_shadow_render_index);
 				}
 				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		draw enemies end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+				// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		depth-only pass start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+				{
+					{
+						s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
+						data.fbo = game->shadow_fbo;
+						data.view = shadow_view;
+						data.projection = shadow_ortho;
+						data.blend_mode = e_blend_mode_disabled;
+						data.depth_mode = e_depth_mode_read_and_write;
+						render_flush(data, true, c_shadow_render_index);
+					}
+				}
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		depth-only pass end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 				{
 					s_render_flush_data data = make_render_flush_data(zero, zero, view_inv);
 					data.fbo = game->game_fbo;
 					data.view = view_3d;
 					data.projection = perspective;
+					data.cull_mode = e_cull_mode_back_ccw;
+					data.light_space_matrix = shadow_ortho * shadow_view;
 					data.blend_mode = e_blend_mode_disabled;
 					data.depth_mode = e_depth_mode_read_and_write;
 					render_flush(data, true, 0);

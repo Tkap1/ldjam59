@@ -8,7 +8,7 @@
 [X] darken player if can't act
 [X] free action indicator
 [X] display current level
-[] shadows?
+[X] shadows?
 [] slider tech?
 
 lesson: sometimes creating some extra data to make the rendering code of something happens in update is the play
@@ -20,7 +20,6 @@ shadows?
 JUICE
 save config
 back face culling for meshes
-volume sliders?
 
 PROBLEM: jumping into portal that has 1 wall behind it kills us instead of teleporting us
 maybe we can move all of the die/win stuff to the end of the frame?? idk

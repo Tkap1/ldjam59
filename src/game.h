@@ -12,6 +12,7 @@ global constexpr float c_enemy_range = 0.2f;
 global constexpr float c_teleport_cooldown = 99999;
 global constexpr float c_win_transition_duration = c_action_cooldown * 2;
 global constexpr s_v2 c_enemy_size = {0.5f, 0.5f};
+global constexpr int c_shadow_render_index = 2;
 
 #if defined(__EMSCRIPTEN__)
 
@@ -420,6 +421,7 @@ struct s_game
 	s_len_str tooltip;
 
 	s_fbo game_fbo;
+	s_fbo shadow_fbo;
 	s_fbo light_fbo;
 
 	// s_list<s_light, 256> multiplicative_light_arr;

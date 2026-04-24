@@ -15,8 +15,6 @@ layout(std140) uniform ublock
 {
 	s_m4 view;
 	s_m4 projection;
-	s_m4 light_view;
-	s_m4 light_projection;
 	s_v2 base_res;
 	s_v2 window_size;
 	s_v3 cam_pos;
@@ -28,6 +26,9 @@ layout(std140) uniform ublock
 	s_v2 camera_bottomright;
 	float pad1;
 	float pad2;
+	s_v3 light_dir;
+	float pad3;
+	s_m4 light_space_matrix;
 };
 #if defined(m_cpu_side)
 #pragma pack(pop)

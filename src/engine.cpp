@@ -7,13 +7,12 @@ func s_render_flush_data make_render_flush_data(s_v3 cam_pos, s_v3 player_pos, s
 	result.view = m4_identity();
 	result.view_inv = view_inv;
 	result.projection = m4_identity();
-	result.light_view = m4_identity();
-	result.light_projection = m4_identity();
 	result.cam_pos = cam_pos;
 	result.cull_mode = e_cull_mode_disabled;
 	result.blend_mode = e_blend_mode_normal;
 	result.depth_mode = e_depth_mode_read_and_write;
 	result.player_pos = player_pos;
+	result.light_space_matrix = m4_identity();
 	return result;
 }
 
@@ -1468,6 +1467,36 @@ func void engine_init(s_platform_data* platform_data)
 		assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 		bind_framebuffer(0);
 	}
+
+	{
+		u32* texture = &game->texture_arr[e_texture_shadow_fbo].id;
+		game->shadow_fbo.size.x = 1024;
+		game->shadow_fbo.size.y = 1024;
+		gl(glGenFramebuffers(1, &game->shadow_fbo.id));
+		bind_framebuffer(game->shadow_fbo.id);
+		gl(glGenTextures(1, texture));
+		gl(glBindTexture(GL_TEXTURE_2D, *texture));
+		gl(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, game->shadow_fbo.size.x, game->shadow_fbo.size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL));
+		gl(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+		gl(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+		gl(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0));
+
+		{
+			u32* depth = &game->texture_arr[e_texture_shadow_fbo_depth].id;
+			glGenTextures(1, depth);
+			gl(glBindTexture(GL_TEXTURE_2D, *depth));
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, game->shadow_fbo.size.x, game->shadow_fbo.size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, *depth, 0);
+		}
+
+		assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+		bind_framebuffer(0);
+	}
 }
 
 func f64 get_seconds()
@@ -1650,8 +1679,6 @@ func void render_flush(s_render_flush_data data, b8 reset_render_count, int rend
 		s_uniform_data uniform_data = zero;
 		uniform_data.view = data.view;
 		uniform_data.projection = data.projection;
-		uniform_data.light_view = data.light_view;
-		uniform_data.light_projection = data.light_projection;
 		uniform_data.render_time = game->render_time;
 		uniform_data.cam_pos = data.cam_pos;
 		uniform_data.mouse = g_mouse;
@@ -1659,6 +1686,8 @@ func void render_flush(s_render_flush_data data, b8 reset_render_count, int rend
 		uniform_data.window_size.x = (float)g_platform_data->window_size.x;
 		uniform_data.window_size.y = (float)g_platform_data->window_size.y;
 		uniform_data.transition_time = data.transition_time;
+		uniform_data.light_dir = get_light_dir();
+		uniform_data.light_space_matrix = data.light_space_matrix;
 
 		{
 			s_rect r = get_camera_bounds(data.view_inv);
@@ -1679,6 +1708,7 @@ func void render_flush(s_render_flush_data data, b8 reset_render_count, int rend
 
 		int in_texture_loc = glGetUniformLocation(game->shader_arr[group.shader_id].id, "in_texture");
 		int noise_loc = glGetUniformLocation(game->shader_arr[group.shader_id].id, "noise");
+		int shadow_map_loc = glGetUniformLocation(game->shader_arr[group.shader_id].id, "shadow_map");
 		if(in_texture_loc >= 0) {
 			glUniform1i(in_texture_loc, 0);
 			glActiveTexture(GL_TEXTURE0);
@@ -1688,6 +1718,11 @@ func void render_flush(s_render_flush_data data, b8 reset_render_count, int rend
 			glUniform1i(noise_loc, 2);
 			glActiveTexture(GL_TEXTURE2);
 			gl(glBindTexture(GL_TEXTURE_2D, game->texture_arr[e_texture_noise].id));
+		}
+		if(shadow_map_loc >= 0) {
+			glUniform1i(shadow_map_loc, 3);
+			glActiveTexture(GL_TEXTURE3);
+			gl(glBindTexture(GL_TEXTURE_2D, game->texture_arr[e_texture_shadow_fbo_depth].id));
 		}
 
 		gl(glBindVertexArray(mesh->vao));
@@ -2233,5 +2268,12 @@ func s_uv get_uv_for_atlas(s_atlas atlas, s_v2i index, b8 flip_x)
 	if(flip_x) {
 		swap(&result.uv_min.x, &result.uv_max.x);
 	}
+	return result;
+}
+
+func s_v3 get_light_dir()
+{
+	// s_v3 result = v3_normalized(v3(1.0f, -1.0f, 1.0f));
+	s_v3 result = v3_normalized(v3(0.2f, -1.0f, -1.0f));
 	return result;
 }

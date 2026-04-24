@@ -39,6 +39,7 @@ enum e_shader
 	e_shader_transition,
 	e_shader_fail_action,
 	e_shader_player,
+	e_shader_mesh_shadow,
 	e_shader_count,
 };
 
@@ -58,6 +59,7 @@ global constexpr char* c_shader_path_arr[e_shader_count] = {
 	"shaders/transition.shader",
 	"shaders/fail_action.shader",
 	"shaders/player.shader",
+	"shaders/mesh_shadow.shader",
 };
 
 
@@ -71,6 +73,8 @@ enum e_texture
 	e_texture_atlas2,
 	e_texture_game_fbo,
 	e_texture_aqtun,
+	e_texture_shadow_fbo,
+	e_texture_shadow_fbo_depth,
 	e_texture_count
 };
 
@@ -83,6 +87,8 @@ global constexpr char* c_texture_path_arr[e_texture_count] = {
 	"assets/atlas2.png",
 	"",
 	"assets/aqtun.png",
+	"",
+	"",
 };
 
 
@@ -206,8 +212,6 @@ struct s_render_flush_data
 	s_m4 view;
 	s_m4 view_inv;
 	s_m4 projection;
-	s_m4 light_view;
-	s_m4 light_projection;
 	e_blend_mode blend_mode;
 	e_depth_mode depth_mode;
 	e_cull_mode cull_mode;
@@ -215,6 +219,7 @@ struct s_render_flush_data
 	s_fbo fbo;
 	s_v3 player_pos;
 	float transition_time;
+	s_m4 light_space_matrix;
 };
 
 #pragma pack(push, 1)
