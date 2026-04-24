@@ -136,8 +136,6 @@ m_dll_export void init(s_platform_data* platform_data)
 
 	load_map(0);
 
-	game->hide_timer = true;
-
 	play_sound_ex(e_sound_music, {.loop = true, .speed = game->music_speed.curr});
 }
 
@@ -1680,6 +1678,11 @@ func void render(float interp_dt, float delta)
 				if(!game->hide_timer) {
 					draw_text(text, container_get_pos_and_advance(&container), 48, make_rrr(1), false, &game->font, zero, 0);
 				}
+			}
+
+			{
+				s_len_str text = format_text("%i/%i", hard_data->current_map + 1, c_map_count);
+				draw_text(text, container_get_pos_and_advance(&container), 48, make_rrr(1), false, &game->font, zero, 0);
 			}
 
 			{
